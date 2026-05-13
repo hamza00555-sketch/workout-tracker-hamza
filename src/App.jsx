@@ -10,9 +10,11 @@ import PhotosPage  from './pages/PhotosPage.jsx'
 import StatsPage   from './pages/StatsPage.jsx'
 
 // Components / Modals
-import RestTimer      from './components/RestTimer.jsx'
-import AIPanel        from './components/AIPanel.jsx'
-import RoutinesModal  from './components/RoutinesModal.jsx'
+import RestTimer          from './components/RestTimer.jsx'
+import AIPanel            from './components/AIPanel.jsx'
+import RoutinesModal      from './components/RoutinesModal.jsx'
+import ExportModal        from './components/ExportModal.jsx'
+import TimelapseGenerator from './components/TimelapseGenerator.jsx'
 
 // ── Greeting (stable per session) ────────────────────────────
 const GREETING = GREETINGS[Math.floor(Math.random() * GREETINGS.length)]
@@ -23,10 +25,12 @@ export default function App() {
   const [active,   setActive]     = useState(() => ls.get('hf_active',   null))
 
   // ── UI state ─────────────────────────────────────────────────
-  const [tab,          setTab]          = useState('home')
-  const [showRest,     setShowRest]     = useState(false)
-  const [showAI,       setShowAI]       = useState(false)
-  const [showRoutines, setShowRoutines] = useState(false)
+  const [tab,            setTab]            = useState('home')
+  const [showRest,       setShowRest]       = useState(false)
+  const [showAI,         setShowAI]         = useState(false)
+  const [showRoutines,   setShowRoutines]   = useState(false)
+  const [showExport,     setShowExport]     = useState(false)
+  const [showTimelapse,  setShowTimelapse]  = useState(false)
 
   // ── Persist to localStorage ───────────────────────────────────
   useEffect(() => { ls.set('hf_sessions', sessions) }, [sessions])
@@ -208,9 +212,10 @@ export default function App() {
           <HistoryPage
             sessions={sessions}
             onDelete={deleteSession}
+            onShowExport={() => setShowExport(true)}
           />
         )}
-        {tab === 'photos' && <PhotosPage />}
+        {tab === 'photos' && <PhotosPage onShowTimelapse={() => setShowTimelapse(true)} />}
         {tab === 'stats' && <StatsPage sessions={sessions} />}
       </main>
 
@@ -281,9 +286,11 @@ export default function App() {
       </nav>
 
       {/* ── Modals ─────────────────────────────────────────────── */}
-      {showRest     && <RestTimer    onClose={() => setShowRest(false)} />}
-      {showAI       && <AIPanel      onImport={importAIRoutine} onClose={() => setShowAI(false)} />}
-      {showRoutines && <RoutinesModal onSelect={loadRoutine}   onClose={() => setShowRoutines(false)} />}
+      {showRest       && <RestTimer           onClose={() => setShowRest(false)} />}
+      {showAI         && <AIPanel             onImport={importAIRoutine} onClose={() => setShowAI(false)} />}
+      {showRoutines   && <RoutinesModal       onSelect={loadRoutine} onClose={() => setShowRoutines(false)} />}
+      {showExport     && <ExportModal         sessions={sessions} onClose={() => setShowExport(false)} />}
+      {showTimelapse  && <TimelapseGenerator  photos={ls.get('hf_photos', [])} onClose={() => setShowTimelapse(false)} />}
     </div>
   )
 }

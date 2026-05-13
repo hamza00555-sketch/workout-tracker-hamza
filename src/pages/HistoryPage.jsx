@@ -3,7 +3,7 @@ import { Card, Badge, Btn } from '../components/ui.jsx'
 import { fmtDate, fmtTime, sessionVolume } from '../utils.js'
 import { MUSCLE_GROUPS } from '../constants.js'
 
-export default function HistoryPage({ sessions, onDelete }) {
+export default function HistoryPage({ sessions, onDelete, onShowExport }) {
   const [expanded, setExpanded] = useState(null)
 
   if (!sessions.length) return (
@@ -20,6 +20,13 @@ export default function HistoryPage({ sessions, onDelete }) {
 
   return (
     <div style={{ paddingBottom: 100 }}>
+      {/* Export button */}
+      <div style={{ marginBottom: 16 }}>
+        <Btn onClick={onShowExport} variant="gold" full style={{ fontSize: 14, padding: 12 }}>
+          📥 تصدير البيانات
+        </Btn>
+      </div>
+
       {sessions.map(s => {
         const muscles = [...new Set(s.exercises.map(e => e.muscle))]
         const allSets = s.exercises.flatMap(e => e.sets)

@@ -5,7 +5,7 @@ import { fmtDate } from '../utils.js'
 
 const ANGLES = ['Front', 'Side', 'Back']
 
-export default function PhotosPage() {
+export default function PhotosPage({ onShowTimelapse }) {
   const [photos, setPhotos] = useState(() => ls.get('hf_photos', []))
   const [angle, setAngle] = useState('Front')
   const [lightbox, setLightbox] = useState(null)
@@ -47,6 +47,11 @@ export default function PhotosPage() {
             style={{ display: 'none' }} onChange={addPhoto}
             capture="environment"
           />
+          {photos.length > 1 && (
+            <Btn onClick={onShowTimelapse} style={{ fontSize: 13, padding: '8px 16px' }}>
+              🎬 Timelapse
+            </Btn>
+          )}
           <Btn onClick={() => fileRef.current?.click()} style={{ fontSize: 13, padding: '8px 16px' }}>
             📸 إضافة
           </Btn>
