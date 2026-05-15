@@ -28,6 +28,9 @@
   --red-lo:   rgba(239,68,68,0.12);
   --red-md:   rgba(239,68,68,0.25);
 
+  --blue:     #3B82F6;
+  --blue-lo:  rgba(59,130,246,0.12);
+
   --green:    #22C55E;
   --green-lo: rgba(34,197,94,0.12);
 
@@ -35,7 +38,7 @@
   --text2:    #9CA3AF;
   --text3:    #4B5563;
 
-  --font-ar:   'Tajawal', sans-serif;
+  --font-ar:   'Cairo', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 
   --radius:    16px;

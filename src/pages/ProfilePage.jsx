@@ -197,28 +197,68 @@ export default function ProfilePage({ profile, sessions, xp, streak, level, onUp
       </Card>
 
       {/* ── Body Stats ────────────────────────────────────────── */}
-      <Card style={{ padding: 16, marginBottom: 12 }}>
-        <SectionTitle>القياسات الجسدية</SectionTitle>
-        <StatRow label="العمر" value={age ? `${age} سنة` : '—'} field="birthday" current={profile?.birthday} />
-        <StatRow label="الطول" value={profile?.height} field="height" current={profile?.height} unit=" سم" />
-        <StatRow
-          label="الوزن"
-          value={profile?.weight}
-          field="weight"
-          current={profile?.weight}
-          unit=" كجم"
-        />
-        <StatRow
-          label="مؤشر كتلة الجسم"
-          value={bmi > 0 ? `${bmi} (${bmiCat})` : '—'}
-        />
-        <StatRow
-          label="نسبة الدهون"
-          value={profile?.bodyFat}
-          field="bodyFat"
-          current={profile?.bodyFat}
-          unit="%"
-        />
+      <Card style={{ padding: 20, marginBottom: 12 }}>
+        <SectionTitle>العلامات الحيوية</SectionTitle>
+
+        {/* Grid of vital stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+          <VitalBox
+            label="العمر"
+            value={age ? age : '—'}
+            unit="سنة"
+            color="var(--cyan)"
+            icon="🎂"
+            onEdit={() => startEdit('birthday', profile?.birthday)}
+          />
+          <VitalBox
+            label="الطول"
+            value={profile?.height || '—'}
+            unit="سم"
+            color="var(--green)"
+            icon="📏"
+            onEdit={() => startEdit('height', profile?.height)}
+          />
+          <VitalBox
+            label="الوزن"
+            value={profile?.weight || '—'}
+            unit="كغ"
+            color="var(--gold)"
+            icon="⚖️"
+            onEdit={() => startEdit('weight', profile?.weight)}
+          />
+          <VitalBox
+            label="دهون الجسم"
+            value={profile?.bodyFat || '—'}
+            unit="%"
+            color="var(--orange)"
+            icon="🔥"
+            onEdit={() => startEdit('bodyFat', profile?.bodyFat)}
+          />
+        </div>
+
+        {/* BMI row */}
+        {bmi > 0 && (
+          <div style={{
+            background: 'var(--bg3)', borderRadius: 12,
+            padding: '12px 16px',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginBottom: 3 }}>
+                مؤشر كتلة الجسم (BMI)
+              </div>
+              <div style={{ fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 700, color: 'var(--text2)' }}>
+                {bmiCat}
+              </div>
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-mono)', fontSize: 26, fontWeight: 800,
+              color: bmi < 18.5 ? 'var(--blue)' : bmi < 25 ? 'var(--green)' : bmi < 30 ? 'var(--orange)' : 'var(--red)',
+            }}>
+              {bmi}
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* ── Training Schedule ─────────────────────────────────── */}
@@ -276,6 +316,42 @@ export default function ProfilePage({ profile, sessions, xp, streak, level, onUp
           profile={profile}
         />
       )}
+    </div>
+  )
+}
+
+// ── Vital Box ─────────────────────────────────────────────────
+function VitalBox({ label, value, unit, color, icon, onEdit }) {
+  return (
+    <div style={{
+      background: 'var(--bg3)', border: `1px solid var(--border)`,
+      borderRadius: 14, padding: '14px 14px',
+      position: 'relative',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <span style={{ fontSize: 20 }}>{icon}</span>
+        <button
+          onClick={onEdit}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text3)', fontSize: 12, padding: 0, lineHeight: 1,
+          }}
+        >✏️</button>
+      </div>
+      <div style={{
+        fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 800,
+        color, marginTop: 8, lineHeight: 1,
+      }}>
+        {value}
+        {value !== '—' && (
+          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text3)', marginRight: 4 }}>
+            {unit}
+          </span>
+        )}
+      </div>
+      <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
+        {label}
+      </div>
     </div>
   )
 }

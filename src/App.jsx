@@ -7,6 +7,15 @@ import {
   GREETINGS, NAV_TABS, ACHIEVEMENTS,
   DAILY_CHALLENGE_POOL, WEEKLY_CHALLENGE_POOL, BOSS_CHALLENGES,
 } from './constants.js'
+import { PersonIcon, TrophyIcon, FlagIcon, DumbbellIcon, HomeIcon } from './components/Icons.jsx'
+
+const NAV_ICONS = {
+  profile:      PersonIcon,
+  achievements: TrophyIcon,
+  challenges:   FlagIcon,
+  workout:      DumbbellIcon,
+  home:         HomeIcon,
+}
 
 // Pages
 import HomePage        from './pages/HomePage.jsx'
@@ -321,16 +330,17 @@ export default function App() {
         position: 'fixed', bottom: 0,
         left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: 560,
-        background: 'var(--bg1)',
+        background: 'rgba(10,10,10,0.95)',
         borderTop: '1px solid var(--border)',
-        backdropFilter: 'blur(16px)',
+        backdropFilter: 'blur(20px)',
         display: 'flex',
-        padding: `8px 4px calc(var(--safe-bottom) + 8px)`,
+        padding: `10px 6px calc(var(--safe-bottom) + 10px)`,
         zIndex: 100,
       }}>
         {NAV_TABS.map(t => {
           const isActive = tab === t.id
           const hasActiveSession = t.id === 'workout' && !!active
+          const IconComp = NAV_ICONS[t.id]
           return (
             <button
               key={t.id}
@@ -339,41 +349,42 @@ export default function App() {
                 flex: 1, background: 'none', border: 'none',
                 cursor: 'pointer', position: 'relative',
                 display: 'flex', flexDirection: 'column',
-                alignItems: 'center', gap: 3, padding: '5px 2px',
+                alignItems: 'center', gap: 4, padding: '4px 2px',
+                transition: 'opacity 0.15s',
+                WebkitTapHighlightColor: 'transparent',
               }}
             >
-              {/* Active session dot */}
               {hasActiveSession && (
                 <div className="pulse-dot" style={{
-                  position: 'absolute', top: 3, right: '50%',
-                  transform: 'translateX(10px)',
+                  position: 'absolute', top: 2, right: '50%',
+                  transform: 'translateX(12px)',
                   width: 7, height: 7, borderRadius: '50%',
                   background: 'var(--cyan)',
                 }} />
               )}
 
-              <span style={{
-                fontSize: 20,
-                opacity: isActive ? 1 : 0.35,
-                transition: 'opacity 0.15s',
+              <div style={{
+                width: 44, height: 32,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 10,
+                background: isActive ? 'var(--cyan-lo)' : 'transparent',
+                transition: 'background 0.2s',
               }}>
-                {t.icon}
-              </span>
+                {IconComp && (
+                  <IconComp
+                    size={22}
+                    color={isActive ? 'var(--cyan)' : '#4B5563'}
+                    filled={isActive}
+                  />
+                )}
+              </div>
 
               <span style={{
                 fontFamily: 'var(--font-ar)', fontSize: 10,
-                color: isActive ? 'var(--cyan)' : 'var(--text3)',
-                fontWeight: isActive ? 700 : 400,
+                color: isActive ? 'var(--cyan)' : '#4B5563',
+                fontWeight: isActive ? 700 : 500,
                 transition: 'color 0.15s',
               }}>{t.label}</span>
-
-              {isActive && (
-                <div style={{
-                  position: 'absolute', bottom: -1,
-                  width: 20, height: 2,
-                  background: 'var(--cyan)', borderRadius: 2,
-                }} />
-              )}
             </button>
           )
         })}
