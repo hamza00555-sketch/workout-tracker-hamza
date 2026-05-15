@@ -10,6 +10,7 @@ export function Card({ children, style = {}, topColor, onClick }) {
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius)',
         borderTop: topColor ? `2px solid ${topColor}` : '1px solid var(--border)',
+        padding: 20,
         cursor: onClick ? 'pointer' : 'default',
         ...style,
       }}
@@ -56,10 +57,10 @@ export function Btn({
       style={{
         ...v,
         borderRadius: 'var(--radius-sm)',
-        padding: '11px 20px',
+        padding: '14px 20px',
         fontFamily: 'var(--font-ar)',
         fontWeight: 700,
-        fontSize: 14,
+        fontSize: 16,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.45 : 1,
         transition: 'opacity 0.15s, transform 0.12s',
@@ -105,7 +106,7 @@ export function SectionTitle({ children, action }) {
           borderRadius: 2, flexShrink: 0,
         }} />
         <span style={{
-          fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 700,
+          fontFamily: 'var(--font-ar)', fontSize: 17, fontWeight: 700,
           color: 'var(--text)',
         }}>{children}</span>
       </div>

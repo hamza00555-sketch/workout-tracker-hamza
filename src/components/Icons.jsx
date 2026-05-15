@@ -109,3 +109,55 @@ export const ChevronIcon = ({ size = 16, color = 'currentColor', dir = 'left' })
     <path d="M15 18l-6-6 6-6" />
   </svg>
 )
+
+export const WeightIcon = ({ size=24, color='currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 4v4M6 16v4M18 4v4M18 16v4M3 8h6M15 8h6M3 16h6M15 16h6M9 12h6" strokeWidth={2.2}/>
+    <rect x="5" y="7" width="4" height="10" rx="1.5" fill={color} fillOpacity="0.2"/>
+    <rect x="15" y="7" width="4" height="10" rx="1.5" fill={color} fillOpacity="0.2"/>
+  </svg>
+)
+
+export const HeightIcon = ({ size=24, color='currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="2" x2="12" y2="22"/>
+    <polyline points="8 6 12 2 16 6"/>
+    <polyline points="8 18 12 22 16 18"/>
+    <line x1="5" y1="12" x2="19" y2="12" strokeWidth={1} strokeDasharray="2 2"/>
+  </svg>
+)
+
+export const BodyFatIcon = ({ size=24, color='currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3a5 5 0 015 5c0 5-5 13-5 13S7 13 7 8a5 5 0 015-5z" fill={color} fillOpacity="0.15"/>
+    <path d="M12 3a5 5 0 015 5c0 5-5 13-5 13S7 13 7 8a5 5 0 015-5z"/>
+    <circle cx="12" cy="8" r="2" fill={color} fillOpacity="0.4"/>
+  </svg>
+)
+
+export const AgeIcon = ({ size=24, color='currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <polyline points="12 6 12 12 16 14"/>
+    <circle cx="12" cy="12" r="1" fill={color}/>
+  </svg>
+)
+
+export const TargetIcon = ({ size=24, color='currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <circle cx="12" cy="12" r="5"/>
+    <circle cx="12" cy="12" r="1" fill={color}/>
+  </svg>
+)
+
+export const SystemIcon = ({ size=24, color='currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2"/>
+    <line x1="8" y1="21" x2="16" y2="21"/>
+    <line x1="12" y1="17" x2="12" y2="21"/>
+    <line x1="7" y1="8" x2="7" y2="12"/>
+    <line x1="12" y1="6" x2="12" y2="12"/>
+    <line x1="17" y1="9" x2="17" y2="12"/>
+  </svg>
+)
