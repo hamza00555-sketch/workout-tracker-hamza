@@ -223,6 +223,8 @@ export default function App() {
       maxWidth: 560,
       margin: '0 auto',
       position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
     }}>
       {/* ── Header ──────────────────────────────────────────────── */}
       <header style={{
@@ -277,7 +279,7 @@ export default function App() {
       <main
         key={tab}
         className="page-enter"
-        style={{ padding: '16px 14px 0' }}
+        style={{ padding: '16px 14px 0', flex: 1 }}
       >
         {tab === 'home' && (
           <HomePage
