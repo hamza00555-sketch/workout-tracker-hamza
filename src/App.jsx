@@ -236,10 +236,9 @@ export default function App() {
               letterSpacing: 3, color: 'var(--text3)', marginBottom: 2,
             }}>HAMZAFIT</div>
             <div style={{
-              fontFamily: 'var(--font-ar)', fontSize: 14,
-              fontWeight: 700, color: 'var(--text2)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              maxWidth: 220,
+              fontFamily: 'var(--font-ar)', fontSize: 13,
+              fontWeight: 600, color: 'var(--text2)',
+              maxWidth: 230, lineHeight: 1.4,
             }}>
               {GREETING}
             </div>
