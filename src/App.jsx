@@ -348,15 +348,15 @@ export default function App() {
 
       {/* ── Bottom Navigation ────────────────────────────────────── */}
       <nav style={{
-        position: 'fixed', bottom: 0,
-        left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: 560,
+        position: 'fixed', bottom: 0, left: 0, right: 0,
         background: 'rgba(10,10,10,0.95)',
         borderTop: '1px solid var(--border)',
         backdropFilter: 'blur(20px)',
         display: 'flex',
-        padding: `10px 6px calc(var(--safe-bottom) + 10px)`,
-        zIndex: 100,
+        padding: `10px 6px calc(env(safe-area-inset-bottom, 0px) + 10px)`,
+        zIndex: 200,
+        maxWidth: 560,
+        margin: '0 auto',
       }}>
         {NAV_TABS.map(t => {
           const isActive = tab === t.id
