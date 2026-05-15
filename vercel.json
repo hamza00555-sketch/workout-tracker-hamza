@@ -1,18 +1,19 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }],
-  "headers": [
+  "routes": [
     {
-      "source": "/sw.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Service-Worker-Allowed", "value": "/" }
-      ]
+      "src": "/sw.js",
+      "dest": "/sw.js",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Service-Worker-Allowed": "/"
+      }
     },
     {
-      "source": "/workbox-(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    }
+      "src": "/workbox-(.*)\\.js",
+      "dest": "/workbox-$1.js",
+      "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" }
+    },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/" }
   ]
 }
