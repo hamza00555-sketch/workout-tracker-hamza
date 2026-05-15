@@ -1,32 +1,15 @@
 // ── Shared UI Primitives ──────────────────────────────────────
 
-// Badge
-export function Badge({ children, color = '#FF6B35', style = {} }) {
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 3,
-      background: color + '20', color,
-      border: `1px solid ${color}38`,
-      borderRadius: 20, padding: '2px 9px',
-      fontSize: 11, fontFamily: 'var(--font-mono)',
-      fontWeight: 600, whiteSpace: 'nowrap',
-      ...style,
-    }}>{children}</span>
-  )
-}
-
 // Card
-export function Card({ children, style = {}, glow, onClick }) {
+export function Card({ children, style = {}, topColor, onClick }) {
   return (
     <div
       onClick={onClick}
       style={{
-        background: 'var(--bg2)',
+        background: 'var(--bg1)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius)',
-        padding: 18,
-        boxShadow: glow ? `0 0 28px ${glow}14` : 'none',
-        transition: 'border-color 0.2s, box-shadow 0.2s',
+        borderTop: topColor ? `2px solid ${topColor}` : '1px solid var(--border)',
         cursor: onClick ? 'pointer' : 'default',
         ...style,
       }}
@@ -37,40 +20,28 @@ export function Card({ children, style = {}, glow, onClick }) {
 // Button variants
 const BTN_VARIANTS = {
   primary: {
-    background: 'linear-gradient(135deg,#FF6B35,#FF8C5A)',
-    color: '#fff',
+    background: 'linear-gradient(135deg, var(--cyan), #00B0A6)',
+    color: '#0A0A0A',
     border: 'none',
-    boxShadow: '0 4px 20px #FF6B3540',
+    boxShadow: '0 4px 20px rgba(0,212,200,0.28)',
   },
   secondary: {
-    background: 'var(--bg3)',
+    background: 'var(--bg2)',
     color: 'var(--text)',
     border: '1px solid var(--border2)',
     boxShadow: 'none',
   },
   ghost: {
     background: 'transparent',
-    color: 'var(--text3)',
+    color: 'var(--text2)',
     border: '1px solid var(--border)',
     boxShadow: 'none',
   },
   danger: {
-    background: '#EF444418',
-    color: '#EF4444',
-    border: '1px solid #EF444430',
+    background: 'var(--red-lo)',
+    color: 'var(--red)',
+    border: '1px solid var(--red-md)',
     boxShadow: 'none',
-  },
-  success: {
-    background: '#22C55E18',
-    color: '#22C55E',
-    border: '1px solid #22C55E30',
-    boxShadow: 'none',
-  },
-  gold: {
-    background: 'linear-gradient(135deg,#EAB308,#F59E0B)',
-    color: '#0a0a0a',
-    border: 'none',
-    boxShadow: '0 4px 20px #EAB30840',
   },
 }
 
@@ -91,7 +62,7 @@ export function Btn({
         fontSize: 14,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.45 : 1,
-        transition: 'opacity 0.18s, transform 0.12s',
+        transition: 'opacity 0.15s, transform 0.12s',
         outline: 'none',
         width: full ? '100%' : undefined,
         display: 'inline-flex',
@@ -107,55 +78,92 @@ export function Btn({
   )
 }
 
-// Text Input
-export function Input({ value, onChange, placeholder, type = 'text', disabled = false, style = {} }) {
+// Badge
+export function Badge({ children, color = '#00D4C8' }) {
   return (
-    <input
-      type={type}
-      inputMode={type === 'number' ? 'decimal' : undefined}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      disabled={disabled}
-      style={{
-        background: 'var(--bg)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-sm)',
-        padding: '9px 12px',
-        color: 'var(--text)',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 13,
-        outline: 'none',
-        width: '100%',
-        transition: 'border-color 0.2s',
-        ...style,
-      }}
-      onFocus={e => e.target.style.borderColor = 'var(--orange)'}
-      onBlur={e => e.target.style.borderColor = 'var(--border)'}
-    />
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 3,
+      background: color + '20', color,
+      border: `1px solid ${color}38`,
+      borderRadius: 20, padding: '2px 9px',
+      fontSize: 11, fontFamily: 'var(--font-mono)',
+      fontWeight: 600, whiteSpace: 'nowrap',
+    }}>{children}</span>
   )
 }
 
-// Select
-export function Select({ value, onChange, children, style = {} }) {
+// Section Title with cyan left bar (RTL = right bar)
+export function SectionTitle({ children, action }) {
   return (
-    <select
-      value={value}
-      onChange={onChange}
-      style={{
-        background: 'var(--bg)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-sm)',
-        padding: '10px 12px',
-        color: 'var(--text)',
-        fontFamily: 'var(--font-ar)',
-        fontSize: 14,
-        outline: 'none',
-        width: '100%',
-        cursor: 'pointer',
-        ...style,
-      }}
-    >{children}</select>
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      marginBottom: 12,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          width: 3, height: 18, background: 'var(--cyan)',
+          borderRadius: 2, flexShrink: 0,
+        }} />
+        <span style={{
+          fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 700,
+          color: 'var(--text)',
+        }}>{children}</span>
+      </div>
+      {action && <div>{action}</div>}
+    </div>
+  )
+}
+
+// Empty State
+export function EmptyState({ icon, title, desc }) {
+  return (
+    <div style={{
+      textAlign: 'center', padding: '50px 20px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+    }}>
+      <div className="icon-glow" style={{ fontSize: 52 }}>{icon}</div>
+      <div style={{ fontFamily: 'var(--font-ar)', fontSize: 17, fontWeight: 700, color: 'var(--text2)' }}>
+        {title}
+      </div>
+      {desc && (
+        <div style={{ fontFamily: 'var(--font-ar)', fontSize: 13, color: 'var(--text3)', maxWidth: 240 }}>
+          {desc}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Progress Bar
+export function ProgressBar({ value = 0, max = 100, color = 'var(--cyan)', height = 6 }) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0
+  return (
+    <div style={{
+      background: 'var(--bg3)', borderRadius: height, height, overflow: 'hidden',
+    }}>
+      <div style={{
+        height: '100%', width: `${pct}%`,
+        background: color, borderRadius: height,
+        transition: 'width 0.6s ease',
+      }} />
+    </div>
+  )
+}
+
+// Rank Badge Chip
+export function RankBadge({ rank }) {
+  if (!rank) return null
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: rank.bg || rank.color + '20',
+      color: rank.color,
+      border: `1px solid ${rank.color}50`,
+      borderRadius: 20, padding: '3px 10px',
+      fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700,
+    }}>
+      {rank.tier} · {rank.label}
+    </span>
   )
 }
 
@@ -163,11 +171,10 @@ export function Select({ value, onChange, children, style = {} }) {
 export function Overlay({ children, onClose, align = 'center' }) {
   return (
     <div
-      className="overlay-enter"
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0,
-        background: '#000000cc',
+        background: 'rgba(0,0,0,0.85)',
         backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: align === 'bottom' ? 'flex-end' : 'center',
@@ -183,7 +190,7 @@ export function Overlay({ children, onClose, align = 'center' }) {
   )
 }
 
-// Close button
+// Close Button
 export function CloseBtn({ onClick }) {
   return (
     <button
@@ -192,59 +199,10 @@ export function CloseBtn({ onClick }) {
         background: 'none', border: 'none',
         color: 'var(--text3)', fontSize: 22,
         cursor: 'pointer', lineHeight: 1, padding: 4,
-        transition: 'color 0.15s',
+        transition: 'color 0.15s', flexShrink: 0,
       }}
       onMouseOver={e => e.currentTarget.style.color = 'var(--text)'}
       onMouseOut={e => e.currentTarget.style.color = 'var(--text3)'}
     >×</button>
-  )
-}
-
-// Stat Box
-export function StatBox({ label, value, color = '#FF6B35', sub }) {
-  return (
-    <Card style={{ flex: 1, textAlign: 'center', padding: '16px 10px' }} glow={color}>
-      <div style={{
-        fontFamily: 'var(--font-mono)', fontSize: 26,
-        fontWeight: 700, color, lineHeight: 1,
-      }}>{value}</div>
-      {sub && <div style={{ fontSize: 10, color: 'var(--text4)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{sub}</div>}
-      <div style={{ fontFamily: 'var(--font-ar)', fontSize: 11, color: 'var(--text3)', marginTop: 5 }}>{label}</div>
-    </Card>
-  )
-}
-
-// Section Header
-export function SectionHeader({ children, sub }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 700, color: 'var(--text2)' }}>{children}</div>
-      {sub && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text4)', marginTop: 2 }}>{sub}</div>}
-    </div>
-  )
-}
-
-// Pill tab selector
-export function PillTabs({ tabs, active, onChange }) {
-  return (
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-      {tabs.map(t => (
-        <button
-          key={t}
-          onClick={() => onChange(t)}
-          style={{
-            background: active === t ? 'var(--orange-lo)' : 'var(--bg2)',
-            border: `1px solid ${active === t ? 'var(--orange)' : 'var(--border)'}`,
-            borderRadius: 20,
-            padding: '6px 16px',
-            color: active === t ? 'var(--orange)' : 'var(--text3)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 12,
-            cursor: 'pointer',
-            transition: 'all 0.18s',
-          }}
-        >{t}</button>
-      ))}
-    </div>
   )
 }

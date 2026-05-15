@@ -1,28 +1,28 @@
 import { useState } from 'react'
 import { MUSCLE_GROUPS } from '../constants.js'
-import { Card, Btn, CloseBtn, Select, Overlay, Badge } from './ui.jsx'
+import { Card, Overlay, CloseBtn } from './ui.jsx'
 
 export default function AddExerciseModal({ onAdd, onClose }) {
   const muscles = Object.keys(MUSCLE_GROUPS)
-  const [muscle, setMuscle] = useState('Chest')
+  const [muscle, setMuscle]       = useState('Chest')
   const [selectedEx, setSelectedEx] = useState(null)
   const [customName, setCustomName] = useState('')
-  const [isCustom, setIsCustom] = useState(false)
-  const [numSets, setNumSets] = useState(3)
+  const [isCustom, setIsCustom]   = useState(false)
+  const [numSets, setNumSets]     = useState(3)
 
-  const group = MUSCLE_GROUPS[muscle]
+  const group     = MUSCLE_GROUPS[muscle]
   const finalName = isCustom ? customName : selectedEx?.name
-  const finalEmoji = isCustom ? '🏋️' : selectedEx?.emoji
+  const canAdd    = Boolean(finalName?.trim())
 
   const handleAdd = () => {
-    if (!finalName?.trim()) return
-    onAdd({ muscle, name: finalName.trim(), emoji: finalEmoji, numSets })
+    if (!canAdd) return
+    onAdd({ muscle, name: finalName.trim(), numSets })
     onClose()
   }
 
   return (
     <Overlay onClose={onClose} align="bottom">
-      <Card style={{ padding: 0, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+      <Card style={{ padding: 0, maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -31,67 +31,68 @@ export default function AddExerciseModal({ onAdd, onClose }) {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Muscle group tabs */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Muscle group tabs - horizontal scroll */}
           <div>
-            <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>
+            <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
               المجموعة العضلية
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 4 }}>
               {muscles.map(m => {
                 const g = MUSCLE_GROUPS[m]
-                const active = muscle === m
+                const isActive = muscle === m
                 return (
                   <button
                     key={m}
                     onClick={() => { setMuscle(m); setSelectedEx(null); setIsCustom(false) }}
                     style={{
-                      background: active ? g.color + '20' : 'var(--bg3)',
-                      border: `1px solid ${active ? g.color : 'var(--border)'}`,
-                      borderRadius: 20, padding: '6px 13px',
-                      color: active ? g.color : 'var(--text3)',
+                      background: isActive ? g.color + '20' : 'var(--bg3)',
+                      border: `1px solid ${isActive ? g.color : 'var(--border)'}`,
+                      borderRadius: 20, padding: '6px 14px',
+                      color: isActive ? g.color : 'var(--text3)',
                       fontSize: 12, fontFamily: 'var(--font-ar)',
-                      cursor: 'pointer', transition: 'all 0.15s',
+                      cursor: 'pointer', whiteSpace: 'nowrap',
+                      transition: 'all 0.15s', flexShrink: 0,
                     }}
-                  >{g.emoji} {m}</button>
+                  >{g.emoji} {g.label}</button>
                 )
               })}
             </div>
           </div>
 
-          {/* Exercises grid */}
+          {/* Exercise list */}
           <div>
-            <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>
-              اختر تمرين
+            <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
+              اختر تمريناً
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {group.exercises.map(ex => {
-                const active = !isCustom && selectedEx?.name === ex.name
+                const isActive = !isCustom && selectedEx?.name === ex.name
                 return (
                   <button
                     key={ex.name}
                     onClick={() => { setSelectedEx(ex); setIsCustom(false) }}
                     style={{
-                      background: active ? group.color + '18' : 'var(--bg)',
-                      border: `1px solid ${active ? group.color : 'var(--border)'}`,
+                      background: isActive ? group.color + '18' : 'var(--bg3)',
+                      border: `1px solid ${isActive ? group.color : 'var(--border)'}`,
                       borderRadius: 10, padding: '10px 12px',
-                      color: active ? group.color : 'var(--text2)',
+                      color: isActive ? group.color : 'var(--text2)',
                       fontFamily: 'var(--font-mono)', fontSize: 12,
                       cursor: 'pointer', textAlign: 'right',
                       transition: 'all 0.15s',
                     }}
-                  >{ex.emoji} {ex.name}</button>
+                  >{ex.name}</button>
                 )
               })}
 
-              {/* Custom */}
+              {/* Custom exercise */}
               <button
                 onClick={() => { setIsCustom(true); setSelectedEx(null) }}
                 style={{
-                  background: isCustom ? '#A855F720' : 'var(--bg)',
-                  border: `1px solid ${isCustom ? '#A855F7' : 'var(--border)'}`,
+                  background: isCustom ? 'var(--purple-lo)' : 'var(--bg3)',
+                  border: `1px solid ${isCustom ? 'var(--purple)' : 'var(--border)'}`,
                   borderRadius: 10, padding: '10px 12px',
-                  color: isCustom ? '#A855F7' : 'var(--text3)',
+                  color: isCustom ? 'var(--purple)' : 'var(--text3)',
                   fontFamily: 'var(--font-ar)', fontSize: 12,
                   cursor: 'pointer', textAlign: 'right',
                 }}
@@ -101,14 +102,14 @@ export default function AddExerciseModal({ onAdd, onClose }) {
             {isCustom && (
               <input
                 autoFocus
-                placeholder="اسم التمرين (بالإنجليزي)"
+                placeholder="اسم التمرين..."
                 value={customName}
                 onChange={e => setCustomName(e.target.value)}
                 style={{
                   marginTop: 10, width: '100%',
-                  background: 'var(--bg)', border: '1px solid var(--orange)',
+                  background: 'var(--bg3)', border: '1px solid var(--cyan)',
                   borderRadius: 8, padding: '10px 12px',
-                  color: 'var(--text)', fontFamily: 'var(--font-mono)',
+                  color: 'var(--text)', fontFamily: 'var(--font-ar)',
                   fontSize: 13, outline: 'none',
                 }}
               />
@@ -117,7 +118,7 @@ export default function AddExerciseModal({ onAdd, onClose }) {
 
           {/* Number of sets */}
           <div>
-            <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginBottom: 10 }}>
+            <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
               عدد السيتات
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -126,12 +127,13 @@ export default function AddExerciseModal({ onAdd, onClose }) {
                   key={n}
                   onClick={() => setNumSets(n)}
                   style={{
-                    background: numSets === n ? 'var(--orange-lo)' : 'var(--bg)',
-                    border: `1px solid ${numSets === n ? 'var(--orange)' : 'var(--border)'}`,
-                    borderRadius: 8, width: 48, height: 40,
-                    color: numSets === n ? 'var(--orange)' : 'var(--text3)',
-                    fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700,
+                    background: numSets === n ? 'var(--cyan-lo)' : 'var(--bg3)',
+                    border: `1px solid ${numSets === n ? 'var(--cyan)' : 'var(--border)'}`,
+                    borderRadius: 8, width: 50, height: 42,
+                    color: numSets === n ? 'var(--cyan)' : 'var(--text3)',
+                    fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 700,
                     cursor: 'pointer',
+                    transition: 'all 0.15s',
                   }}
                 >{n}</button>
               ))}
@@ -140,15 +142,15 @@ export default function AddExerciseModal({ onAdd, onClose }) {
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '14px 18px', borderTop: '1px solid var(--border)' }}>
-          <Btn
+        <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)' }}>
+          <button
             onClick={handleAdd}
-            disabled={!finalName?.trim()}
-            full
-            style={{ fontSize: 15, padding: 14 }}
+            disabled={!canAdd}
+            className="btn-cyan"
+            style={{ opacity: canAdd ? 1 : 0.4, fontSize: 15 }}
           >
-            {finalName ? `➕ إضافة: ${finalEmoji} ${finalName}` : 'اختر تمرين أولاً'}
-          </Btn>
+            {canAdd ? `➕ إضافة: ${finalName}` : 'اختر تمريناً أولاً'}
+          </button>
         </div>
       </Card>
     </Overlay>

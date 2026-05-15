@@ -1,3 +1,5 @@
+import { RANKS, COMMITMENT_LEVELS } from './constants.js'
+
 // ── localStorage helpers ──────────────────────────────────────
 export const ls = {
   get: (key, def) => {
@@ -13,28 +15,33 @@ export const ls = {
   },
 }
 
+// ── ID generator ──────────────────────────────────────────────
+export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2)
+
 // ── Date helpers ──────────────────────────────────────────────
 export const todayISO = () => new Date().toISOString().split('T')[0]
 
-export const fmtDate = (iso) =>
-  new Date(iso).toLocaleDateString('ar-SA', {
-    weekday: 'short', month: 'short', day: 'numeric',
-  })
+export const fmtDate = (iso) => {
+  if (!iso) return '—'
+  try {
+    return new Date(iso).toLocaleDateString('ar-SA', {
+      weekday: 'short', month: 'short', day: 'numeric',
+    })
+  } catch {
+    return iso
+  }
+}
 
-export const fmtTime = (iso) =>
-  new Date(iso).toLocaleTimeString('ar-SA', {
-    hour: '2-digit', minute: '2-digit',
-  })
-
-export const fmtDuration = (ms) => {
-  const m = Math.round(ms / 60000)
+export const fmtDuration = (minutes) => {
+  if (!minutes && minutes !== 0) return '—'
+  const m = Math.round(minutes)
   if (m < 60) return `${m} دقيقة`
   return `${Math.floor(m / 60)}س ${m % 60}د`
 }
 
 // ── Streak calculator ─────────────────────────────────────────
 export const calcStreak = (sessions) => {
-  if (!sessions.length) return 0
+  if (!sessions || !sessions.length) return 0
   const days = [...new Set(sessions.map(s => s.date.split('T')[0]))]
     .sort()
     .reverse()
@@ -49,42 +56,138 @@ export const calcStreak = (sessions) => {
   return streak
 }
 
-// ── 1RM estimate (Epley formula) ─────────────────────────────
-export const calc1RM = (weight, reps) => {
-  if (!weight || !reps) return 0
-  if (reps === 1) return weight
-  return Math.round(weight * (1 + reps / 30))
-}
-
 // ── Session volume ────────────────────────────────────────────
-export const sessionVolume = (session) =>
-  session.exercises.flatMap(ex => ex.sets).reduce((total, s) => {
+export const sessionVolume = (session) => {
+  if (!session || !session.exercises) return 0
+  return session.exercises.flatMap(ex => ex.sets).reduce((total, s) => {
     if (!s.done) return total
     const w = parseFloat(s.weight) || 0
-    const r = (parseInt(s.r1) || 0) + (parseInt(s.r2) || 0) + (parseInt(s.r3) || 0)
+    const r = parseInt(s.reps) || 0
     return total + w * r
   }, 0)
+}
 
-// ── ID generator ─────────────────────────────────────────────
-export const uid = () => Date.now() + Math.random().toString(36).slice(2)
-
-// ── Build blank set ───────────────────────────────────────────
+// ── Blank set ─────────────────────────────────────────────────
 export const blankSet = (prevWeight = '') => ({
   weight: prevWeight,
-  r1: '', r2: '', r3: '',
+  reps: '',
   done: false,
 })
 
-// ── Build exercise object ─────────────────────────────────────
-export const buildExercise = ({ muscle, name, emoji, numSets = 3, prevWeight = '' }) => ({
+// ── Build exercise ────────────────────────────────────────────
+export const buildExercise = ({ muscle, name, numSets = 3, prevWeight = '' }) => ({
   id: uid(),
   muscle,
   name,
-  emoji,
   sets: Array.from({ length: numSets }, () => blankSet(prevWeight)),
 })
 
-// ── Audio beep ───────────────────────────────────────────────
+// ── XP / Level formulas ───────────────────────────────────────
+export const xpForNextLevel = (level) => 300 * level * level
+
+export const totalXPForLevel = (level) => {
+  if (level <= 1) return 0
+  return 50 * (level - 1) * level * (2 * level - 1)
+}
+
+export const levelFromXP = (xp) => {
+  let level = 1
+  while (totalXPForLevel(level + 1) <= xp) level++
+  return level
+}
+
+export const xpProgress = (xp) => {
+  const level = levelFromXP(xp)
+  const currentLevelXP = totalXPForLevel(level)
+  const nextLevelXP = totalXPForLevel(level + 1)
+  const currentXP = xp - currentLevelXP
+  const neededXP = nextLevelXP - currentLevelXP
+  const pct = neededXP > 0 ? Math.min(100, Math.round((currentXP / neededXP) * 100)) : 100
+  return { level, currentXP, neededXP, pct }
+}
+
+// ── Rank lookup ───────────────────────────────────────────────
+export const getRank = (level) => {
+  let rank = RANKS[0]
+  for (const r of RANKS) {
+    if (level >= r.minLevel) rank = r
+  }
+  return rank
+}
+
+// ── Commitment level ──────────────────────────────────────────
+export const getCommitmentLevel = (streak) => {
+  let cl = COMMITMENT_LEVELS[0]
+  for (const c of COMMITMENT_LEVELS) {
+    if (streak >= c.min) cl = c
+  }
+  return cl
+}
+
+// ── BMI ───────────────────────────────────────────────────────
+export const calcBMI = (weight, height) => {
+  if (!weight || !height) return 0
+  const h = height / 100
+  return Math.round((weight / (h * h)) * 10) / 10
+}
+
+export const bmiCategory = (bmi) => {
+  if (bmi < 18.5) return 'نقص وزن'
+  if (bmi < 25)   return 'وزن طبيعي'
+  if (bmi < 30)   return 'زيادة وزن'
+  return 'سمنة'
+}
+
+// ── Age calculator ────────────────────────────────────────────
+export const calcAge = (birthday) => {
+  if (!birthday) return null
+  const today = new Date()
+  const birth = new Date(birthday)
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  return age
+}
+
+// ── Challenge state manager ───────────────────────────────────
+export const getTodayChallenges = (challengeState, dailyPool, weeklyPool, bossPool) => {
+  const today = todayISO()
+  const weekNum = Math.floor(Date.now() / (7 * 86400000))
+
+  // Pick stable daily IDs (deterministic by date seed)
+  let dailyIds = challengeState?.dailyIds
+  let weeklyIds = challengeState?.weeklyIds
+  let bossId = challengeState?.bossId
+
+  if (!dailyIds || challengeState?.date !== today) {
+    // Seeded random based on date
+    const seed = parseInt(today.replace(/-/g, ''))
+    const pick3 = (arr) => {
+      const shuffled = [...arr].map((x, i) => ({ x, r: Math.sin(seed + i) }))
+        .sort((a, b) => a.r - b.r).map(o => o.x)
+      return shuffled.slice(0, 3).map(c => c.id)
+    }
+    dailyIds = pick3(dailyPool)
+  }
+
+  if (!weeklyIds || challengeState?.week !== weekNum) {
+    const seed = weekNum
+    const pick2 = (arr) => {
+      const shuffled = [...arr].map((x, i) => ({ x, r: Math.sin(seed + i * 7) }))
+        .sort((a, b) => a.r - b.r).map(o => o.x)
+      return shuffled.slice(0, 2).map(c => c.id)
+    }
+    weeklyIds = pick2(weeklyPool)
+  }
+
+  if (!bossId) {
+    bossId = bossPool[weekNum % bossPool.length]?.id || bossPool[0]?.id
+  }
+
+  return { date: today, week: weekNum, dailyIds, weeklyIds, bossId }
+}
+
+// ── Audio beep ────────────────────────────────────────────────
 export const playBeep = (count = 3) => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)()
@@ -94,7 +197,7 @@ export const playBeep = (count = 3) => {
       o.connect(g); g.connect(ctx.destination)
       o.type = 'sine'
       o.frequency.value = i < count - 1 ? 660 : 880
-      const t = ctx.currentTime + i * 0.18
+      const t = ctx.currentTime + i * 0.2
       g.gain.setValueAtTime(0.4, t)
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.15)
       o.start(t); o.stop(t + 0.15)
@@ -102,7 +205,7 @@ export const playBeep = (count = 3) => {
   } catch {}
 }
 
-// ── Build calendar data (past N weeks) ──────────────────────
+// ── Calendar data builder ─────────────────────────────────────
 export const buildCalendarData = (sessions, weeks = 14) => {
   const counts = {}
   sessions.forEach(s => {
@@ -118,7 +221,3 @@ export const buildCalendarData = (sessions, weeks = 14) => {
   }
   return days
 }
-
-// ── Arabic numeral helper ─────────────────────────────────────
-export const toAr = (n) =>
-  String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[+d])
