@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { COMMITMENT_CATEGORIES, GOAL_CATEGORIES, getCatData } from '../components/CategoryData.js';
-import { uid } from '../utils/format.js';
+import { uid, formatAmount } from '../utils/format.js';
 import { calcGoalMonthly } from '../utils/calc.js';
 
 export default function Onboarding() {
@@ -120,7 +120,7 @@ export default function Onboarding() {
                       <div className="list-item-name">{c.name}</div>
                       <div className="list-item-sub">{cat.label} · يوم {c.dayOfMonth}</div>
                     </div>
-                    <div className="list-item-amount">{c.amount.toLocaleString()} ريال</div>
+                    <div className="list-item-amount"><span className="num">{formatAmount(c.amount)}</span> ريال</div>
                     <button className="btn-icon" onClick={() => setCommitments(p => p.filter(x => x.id !== c.id))}
                       style={{ color: 'var(--danger)', fontSize: 16 }}>✕</button>
                   </div>
@@ -164,9 +164,9 @@ export default function Onboarding() {
                     <div className="cat-icon" style={{ background: cat.bg }}>{cat.emoji}</div>
                     <div className="list-item-info">
                       <div className="list-item-name">{g.name}</div>
-                      <div className="list-item-sub">{g.monthlyContribution.toLocaleString()} ريال / شهر</div>
+                      <div className="list-item-sub"><span className="num">{formatAmount(g.monthlyContribution)}</span> ريال / شهر</div>
                     </div>
-                    <div className="list-item-amount">{g.targetAmount.toLocaleString()} ريال</div>
+                    <div className="list-item-amount"><span className="num">{formatAmount(g.targetAmount)}</span> ريال</div>
                     <button className="btn-icon" onClick={() => setGoals(p => p.filter(x => x.id !== g.id))}
                       style={{ color: 'var(--danger)', fontSize: 16 }}>✕</button>
                   </div>
