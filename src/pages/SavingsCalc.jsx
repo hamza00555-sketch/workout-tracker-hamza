@@ -99,7 +99,7 @@ export default function SavingsCalc({ onClose, onAddGoal }) {
         {[['duration', '📅 أحدد المدة'], ['amount', '💵 أحدد المبلغ']].map(([id, label]) => (
           <button key={id} onClick={() => setMode(id)} style={{
             flex: 1, padding: '10px', border: 'none', borderRadius: 10, cursor: 'pointer',
-            fontFamily: 'GuesswhatExceptional, Cairo, sans-serif', fontWeight: 700, fontSize: 13,
+            fontFamily: 'Mestika, Cairo, sans-serif', fontWeight: 700, fontSize: 13,
             background: mode === id ? 'var(--primary)' : 'transparent',
             color: mode === id ? '#fff' : 'var(--text2)', transition: 'all .2s',
           }}>{label}</button>
@@ -146,7 +146,7 @@ export default function SavingsCalc({ onClose, onAddGoal }) {
               {SCENARIOS.map(m => (
                 <button key={m} onClick={() => { setMonths(String(m)); setSelectedMonths(m); }} style={{
                   padding: '8px 14px', border: 'none', borderRadius: 10, cursor: 'pointer',
-                  fontFamily: 'GuesswhatExceptional, Cairo, sans-serif', fontWeight: 700, fontSize: 13,
+                  fontFamily: 'Mestika, Cairo, sans-serif', fontWeight: 700, fontSize: 13,
                   background: Number(months) === m ? 'var(--primary)' : 'var(--card2)',
                   color: Number(months) === m ? '#fff' : 'var(--text2)', transition: 'all .15s',
                 }}><span className="num">{m}</span> شهر</button>

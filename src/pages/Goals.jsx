@@ -70,7 +70,7 @@ export default function Goals() {
           <button onClick={() => setCalcSheet(true)} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
             background: 'var(--primary-dim)', border: '1px solid var(--primary)',
-            borderRadius: 12, cursor: 'pointer', fontFamily: 'GuesswhatExceptional, Cairo, sans-serif',
+            borderRadius: 12, cursor: 'pointer', fontFamily: 'Mestika, Cairo, sans-serif',
             fontWeight: 700, fontSize: 13, color: 'var(--primary)',
           }}>
             🧮 الحاسبة
