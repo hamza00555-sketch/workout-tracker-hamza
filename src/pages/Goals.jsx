@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
-
 import { calcGoalProgress, calcGoalMonthly, monthsUntil } from '../utils/calc.js';
 import { getCatData, GOAL_CATEGORIES } from '../components/CategoryData.js';
 import BottomSheet from '../components/BottomSheet.jsx';
 import SavingsCalc from './SavingsCalc.jsx';
 
-const EMPTY_FORM = { name: '', targetAmount: '', targetDate: '', category: 'travel', monthlyContribution: '' };
+const EMPTY_FORM = { name: '', targetAmount: '', targetDate: '', category: 'travel', monthlyContribution: '', bankId: null, accountId: null };
 
 export default function Goals() {
-  const { goals, addGoal, updateGoal, deleteGoal, addGoalAmount, fmt } = useApp();
+  const { goals, banks, addGoal, updateGoal, deleteGoal, addGoalAmount, fmt } = useApp();
   const [sheet, setSheet] = useState(false);
   const [addAmountSheet, setAddAmountSheet] = useState(false);
   const [calcSheet, setCalcSheet] = useState(false);
@@ -31,6 +30,7 @@ export default function Goals() {
     setForm({
       name: g.name, targetAmount: String(g.targetAmount), targetDate: g.targetDate,
       category: g.category, monthlyContribution: String(g.monthlyContribution || ''),
+      bankId: g.bankId || null, accountId: g.accountId || null,
     });
     setSheet(true);
   }
@@ -40,6 +40,7 @@ export default function Goals() {
     const base = {
       name: form.name, targetAmount: Number(form.targetAmount),
       targetDate: form.targetDate, category: form.category,
+      bankId: form.bankId, accountId: form.accountId,
     };
     const mc = form.monthlyContribution ? Number(form.monthlyContribution) : null;
     if (editItem) {
@@ -56,6 +57,8 @@ export default function Goals() {
     setAddAmountSheet(false);
     setAddAmountVal('');
   }
+
+  const selectedBank = banks.find(b => b.id === form.bankId);
 
   return (
     <div className="page">
@@ -87,13 +90,13 @@ export default function Goals() {
           </div>
         )}
 
-        {active.map(g => <GoalCard key={g.id} goal={g} onEdit={openEdit}
+        {active.map(g => <GoalCard key={g.id} goal={g} banks={banks} onEdit={openEdit}
           onAdd={() => { setAddAmountGoal(g); setAddAmountSheet(true); }} />)}
 
         {completed.length > 0 && (
           <>
             <div style={{ color: 'var(--text3)', fontSize: 13, fontWeight: 600, marginTop: 8 }}>مكتملة ✓</div>
-            {completed.map(g => <GoalCard key={g.id} goal={g} onEdit={openEdit} completed />)}
+            {completed.map(g => <GoalCard key={g.id} goal={g} banks={banks} onEdit={openEdit} completed />)}
           </>
         )}
       </div>
@@ -141,6 +144,64 @@ export default function Goals() {
               ))}
             </div>
           </div>
+
+          {/* Bank/Account Picker */}
+          {banks.length > 0 && (
+            <div className="input-group">
+              <label className="input-label">وين تحفظ مدخراته؟ (اختياري)</label>
+              {!form.bankId ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {banks.map(b => (
+                    <button key={b.id}
+                      onClick={() => setForm(p => ({ ...p, bankId: b.id, accountId: null }))}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '8px 14px', border: '1.5px solid var(--border)',
+                        borderRadius: 10, background: 'var(--card2)', cursor: 'pointer',
+                        fontFamily: 'Mestika, Cairo, sans-serif', fontSize: 13, fontWeight: 600, color: 'var(--text)',
+                      }}>
+                      {b.emoji} {b.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                      background: `${selectedBank.color}18`, borderRadius: 10,
+                      border: `1px solid ${selectedBank.color}40`,
+                    }}>
+                      <span>{selectedBank.emoji}</span>
+                      <span style={{ fontWeight: 700, color: selectedBank.color }}>{selectedBank.name}</span>
+                    </div>
+                    <button onClick={() => setForm(p => ({ ...p, bankId: null, accountId: null }))}
+                      style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+                  </div>
+                  {selectedBank.accounts.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {selectedBank.accounts.map(acc => (
+                        <button key={acc.id}
+                          onClick={() => setForm(p => ({ ...p, accountId: acc.id }))}
+                          style={{
+                            padding: '7px 14px',
+                            border: `1.5px solid ${form.accountId === acc.id ? selectedBank.color : 'var(--border)'}`,
+                            borderRadius: 10,
+                            background: form.accountId === acc.id ? `${selectedBank.color}18` : 'var(--card2)',
+                            cursor: 'pointer', fontFamily: 'Mestika, Cairo, sans-serif', fontSize: 13,
+                            fontWeight: form.accountId === acc.id ? 700 : 500,
+                            color: form.accountId === acc.id ? selectedBank.color : 'var(--text2)',
+                          }}>
+                          {acc.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 10, paddingBottom: 8 }}>
             {editItem && (
               <button className="btn btn-danger" style={{ flex: 1 }}
@@ -155,10 +216,7 @@ export default function Goals() {
 
       {/* Savings Calc Sheet */}
       <BottomSheet open={calcSheet} onClose={() => setCalcSheet(false)} title="🧮 حاسبة الادخار">
-        <SavingsCalc
-          onClose={() => setCalcSheet(false)}
-          onAddGoal={async (data) => { await addGoal(data); }}
-        />
+        <SavingsCalc onClose={() => setCalcSheet(false)} onAddGoal={async (data) => { await addGoal(data); }} />
       </BottomSheet>
 
       {/* Add Amount Sheet */}
@@ -187,11 +245,13 @@ export default function Goals() {
   );
 }
 
-function GoalCard({ goal, onEdit, onAdd, completed }) {
+function GoalCard({ goal, banks, onEdit, onAdd, completed }) {
   const { fmt } = useApp();
   const progress = calcGoalProgress(goal);
   const cat = getCatData(GOAL_CATEGORIES, goal.category);
   const months = goal.targetDate ? monthsUntil(goal.targetDate) : null;
+  const assignedBank = goal.bankId ? banks.find(b => b.id === goal.bankId) : null;
+  const assignedAccount = assignedBank?.accounts.find(a => a.id === goal.accountId);
 
   return (
     <div className="card anim-fadeup" style={{ opacity: completed ? 0.7 : 1 }}>
@@ -202,6 +262,16 @@ function GoalCard({ goal, onEdit, onAdd, completed }) {
           <div style={{ color: 'var(--text2)', fontSize: 12, marginTop: 2 }}>
             <span className="num">{fmt(goal.savedAmount || 0)}</span> / <span className="num">{fmt(goal.targetAmount)}</span> ريال
           </div>
+          {assignedBank && (
+            <div style={{ marginTop: 4 }}>
+              <span style={{
+                fontSize: 11, padding: '2px 7px', borderRadius: 6,
+                background: `${assignedBank.color}18`, color: assignedBank.color, fontWeight: 600,
+              }}>
+                {assignedBank.emoji} {assignedAccount ? assignedAccount.name : assignedBank.name}
+              </span>
+            </div>
+          )}
         </div>
         <div style={{ textAlign: 'left' }}>
           <div style={{ fontSize: 22, fontWeight: 900, color: completed ? 'var(--accent)' : 'var(--primary)' }}>

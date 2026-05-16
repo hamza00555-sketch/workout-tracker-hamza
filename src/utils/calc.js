@@ -23,28 +23,6 @@ export function calcGoalsMonthlyTotal(goals) {
   return goals.filter(g => !g.completed).reduce((s, g) => s + (g.monthlyContribution || 0), 0);
 }
 
-export function calcSpent(expenses, month) {
-  return expenses.filter(e => e.month === month).reduce((s, e) => s + (e.amount || 0), 0);
-}
-
-export function calcRemaining(salary, commitmentsTotal, banksTotal, goalsTotal, expenseBudget) {
-  return (salary || 0) - commitmentsTotal - banksTotal - goalsTotal - (expenseBudget || 0);
-}
-
-// Bank utilities
-export function isAccountDue(account, monthStr) {
-  if ((account.frequency || 1) <= 1) return true;
-  if (!account.lastTransferredMonth) return true;
-  const [cy, cm] = monthStr.split('-').map(Number);
-  const [ly, lm] = account.lastTransferredMonth.split('-').map(Number);
-  return (cy - ly) * 12 + (cm - lm) >= account.frequency;
-}
-
-export function calcBankTotal(bank, monthStr) {
-  return (bank.accounts || []).reduce((sum, acc) =>
-    sum + (isAccountDue(acc, monthStr) ? (acc.amount || 0) : 0), 0);
-}
-
-export function calcAllBanksTotal(banks, monthStr) {
-  return (banks || []).reduce((sum, b) => sum + calcBankTotal(b, monthStr), 0);
+export function calcRemaining(salary, commitmentsTotal, goalsTotal) {
+  return (salary || 0) - commitmentsTotal - goalsTotal;
 }

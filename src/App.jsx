@@ -6,10 +6,9 @@ import Dashboard from './pages/Dashboard.jsx';
 import Commitments from './pages/Commitments.jsx';
 import Banks from './pages/Banks.jsx';
 import Goals from './pages/Goals.jsx';
-import Expenses from './pages/Expenses.jsx';
 import Settings from './pages/Settings.jsx';
 
-const NAV_PAGES = ['dashboard', 'commitments', 'banks', 'goals', 'expenses', 'settings'];
+const NAV_PAGES = ['dashboard', 'commitments', 'banks', 'goals', 'settings'];
 
 function AppRouter() {
   const { page, loading } = useApp();
@@ -40,7 +39,6 @@ function AppRouter() {
       {page === 'commitments' && <Commitments />}
       {page === 'banks'       && <Banks />}
       {page === 'goals'       && <Goals />}
-      {page === 'expenses'    && <Expenses />}
       {page === 'settings'    && <Settings />}
       {NAV_PAGES.includes(page) && <BottomNav />}
     </>

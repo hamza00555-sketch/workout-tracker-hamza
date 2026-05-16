@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { currentMonth } from '../utils/format.js';
-import { calcCommitmentsTotal, calcGoalsMonthlyTotal, calcSpent } from '../utils/calc.js';
+import { calcCommitmentsTotal, calcGoalsMonthlyTotal } from '../utils/calc.js';
 import { GOAL_CATEGORIES, getCatData } from '../components/CategoryData.js';
 
 const SCENARIOS = [3, 6, 12, 18, 24, 36];

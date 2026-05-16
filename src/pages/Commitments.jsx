@@ -4,20 +4,17 @@ import { daysUntil } from '../utils/format.js';
 import { getCatData, COMMITMENT_CATEGORIES } from '../components/CategoryData.js';
 import BottomSheet from '../components/BottomSheet.jsx';
 
-const EMPTY_FORM = { name: '', amount: '', category: 'rent', dayOfMonth: 1 };
+const EMPTY_FORM = { name: '', amount: '', category: 'rent', dayOfMonth: 1, bankId: null, accountId: null };
 
 export default function Commitments() {
-  const { commitments, addCommitment, updateCommitment, deleteCommitment, fmt } = useApp();
+  const { commitments, banks, addCommitment, updateCommitment, deleteCommitment, fmt } = useApp();
   const [filter, setFilter] = useState('all');
   const [sheet, setSheet] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
-  const enriched = commitments.map(c => ({
-    ...c,
-    days: daysUntil(c.dayOfMonth || 1),
-  }));
+  const enriched = commitments.map(c => ({ ...c, days: daysUntil(c.dayOfMonth || 1) }));
 
   const filtered = enriched.filter(c => {
     if (filter === 'paid') return c.paidThisMonth;
@@ -36,7 +33,10 @@ export default function Commitments() {
 
   function openEdit(c) {
     setEditItem(c);
-    setForm({ name: c.name, amount: String(c.amount), category: c.category, dayOfMonth: c.dayOfMonth || 1 });
+    setForm({
+      name: c.name, amount: String(c.amount), category: c.category,
+      dayOfMonth: c.dayOfMonth || 1, bankId: c.bankId || null, accountId: c.accountId || null,
+    });
     setSheet(true);
   }
 
@@ -56,11 +56,13 @@ export default function Commitments() {
   }
 
   function getBadge(c) {
-    if (c.paidThisMonth) return { label: 'مدفوع ✓', cls: 'badge-green', isNum: false };
-    if (c.days === 0) return { label: 'اليوم!', cls: 'badge-red', isNum: false };
-    if (c.days <= 7) return { label: <>بعد <span className="num">{c.days}</span> أيام</>, cls: c.days <= 3 ? 'badge-red' : 'badge-yellow', isNum: true };
-    return { label: <>يوم <span className="num">{c.dayOfMonth}</span></>, cls: 'badge-purple', isNum: true };
+    if (c.paidThisMonth) return { label: 'مدفوع ✓', cls: 'badge-green' };
+    if (c.days === 0) return { label: 'اليوم!', cls: 'badge-red' };
+    if (c.days <= 7) return { label: <>بعد <span className="num">{c.days}</span> أيام</>, cls: c.days <= 3 ? 'badge-red' : 'badge-yellow' };
+    return { label: <>يوم <span className="num">{c.dayOfMonth}</span></>, cls: 'badge-purple' };
   }
+
+  const selectedBank = banks.find(b => b.id === form.bankId);
 
   return (
     <div className="page">
@@ -83,7 +85,6 @@ export default function Commitments() {
       </div>
 
       <div style={{ padding: '14px 16px 0' }}>
-        {/* Filter */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           {[['all', 'الكل'], ['upcoming', 'قادم'], ['paid', 'مدفوع']].map(([id, label]) => (
             <button key={id} className={`chip chip-ghost ${filter === id ? 'active' : ''}`}
@@ -91,7 +92,6 @@ export default function Commitments() {
           ))}
         </div>
 
-        {/* List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text3)' }}>
@@ -102,6 +102,8 @@ export default function Commitments() {
           {filtered.map(c => {
             const cat = getCatData(COMMITMENT_CATEGORIES, c.category);
             const badge = getBadge(c);
+            const assignedBank = c.bankId ? banks.find(b => b.id === c.bankId) : null;
+            const assignedAccount = assignedBank?.accounts.find(a => a.id === c.accountId);
             return (
               <div key={c.id} className="anim-fadeup">
                 <div className="list-item" style={{ opacity: c.paidThisMonth ? 0.7 : 1 }}>
@@ -110,8 +112,16 @@ export default function Commitments() {
                     <div className="list-item-name" style={{ textDecoration: c.paidThisMonth ? 'line-through' : 'none' }}>
                       {c.name}
                     </div>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
                       <span className={`badge ${badge.cls}`}>{badge.label}</span>
+                      {assignedBank && (
+                        <span style={{
+                          fontSize: 11, padding: '2px 7px', borderRadius: 6,
+                          background: `${assignedBank.color}18`, color: assignedBank.color, fontWeight: 600,
+                        }}>
+                          {assignedBank.emoji} {assignedAccount ? assignedAccount.name : assignedBank.name}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
@@ -135,10 +145,8 @@ export default function Commitments() {
         </div>
       </div>
 
-      {/* FAB */}
       <button className="fab" onClick={openAdd}>+</button>
 
-      {/* Confirm Delete */}
       {confirmDelete && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 300,
@@ -159,7 +167,6 @@ export default function Commitments() {
         </div>
       )}
 
-      {/* Add/Edit Sheet */}
       <BottomSheet open={sheet} onClose={() => setSheet(false)} title={editItem ? 'تعديل الالتزام' : 'التزام جديد'}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="input-group">
@@ -190,6 +197,64 @@ export default function Commitments() {
               ))}
             </div>
           </div>
+
+          {/* Bank/Account Picker */}
+          {banks.length > 0 && (
+            <div className="input-group">
+              <label className="input-label">وين تروح هذي المدفوعة؟ (اختياري)</label>
+              {!form.bankId ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {banks.map(b => (
+                    <button key={b.id}
+                      onClick={() => setForm(p => ({ ...p, bankId: b.id, accountId: null }))}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '8px 14px', border: '1.5px solid var(--border)',
+                        borderRadius: 10, background: 'var(--card2)', cursor: 'pointer',
+                        fontFamily: 'Mestika, Cairo, sans-serif', fontSize: 13, fontWeight: 600, color: 'var(--text)',
+                      }}>
+                      {b.emoji} {b.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                      background: `${selectedBank.color}18`, borderRadius: 10,
+                      border: `1px solid ${selectedBank.color}40`,
+                    }}>
+                      <span>{selectedBank.emoji}</span>
+                      <span style={{ fontWeight: 700, color: selectedBank.color }}>{selectedBank.name}</span>
+                    </div>
+                    <button onClick={() => setForm(p => ({ ...p, bankId: null, accountId: null }))}
+                      style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+                  </div>
+                  {selectedBank.accounts.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {selectedBank.accounts.map(acc => (
+                        <button key={acc.id}
+                          onClick={() => setForm(p => ({ ...p, accountId: acc.id }))}
+                          style={{
+                            padding: '7px 14px',
+                            border: `1.5px solid ${form.accountId === acc.id ? selectedBank.color : 'var(--border)'}`,
+                            borderRadius: 10,
+                            background: form.accountId === acc.id ? `${selectedBank.color}18` : 'var(--card2)',
+                            cursor: 'pointer', fontFamily: 'Mestika, Cairo, sans-serif', fontSize: 13,
+                            fontWeight: form.accountId === acc.id ? 700 : 500,
+                            color: form.accountId === acc.id ? selectedBank.color : 'var(--text2)',
+                          }}>
+                          {acc.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 10, paddingBottom: 8 }}>
             {editItem && (
               <button className="btn btn-danger" style={{ flex: 1 }}

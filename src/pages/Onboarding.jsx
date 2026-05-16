@@ -9,7 +9,6 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [salary, setSalary] = useState('');
   const [salaryDay, setSalaryDay] = useState(25);
-  const [expenseBudget, setExpenseBudget] = useState('');
   const [commitments, setCommitments] = useState([]);
   const [goals, setGoals] = useState([]);
   const [showAddCommitment, setShowAddCommitment] = useState(false);
@@ -22,7 +21,6 @@ export default function Onboarding() {
     await updateSettings({
       salary: Number(salary),
       salaryDay,
-      expenseBudget: Number(expenseBudget) || 1500,
       onboardingComplete: true,
     });
     for (const c of commitments) await addCommitment(c);
@@ -74,12 +72,6 @@ export default function Onboarding() {
               <input className="input" type="number" inputMode="numeric"
                 placeholder="مثال: 10000" value={salary} onChange={e => setSalary(e.target.value)}
                 style={{ fontSize: 22, fontWeight: 700, textAlign: 'center' }} />
-            </div>
-
-            <div className="input-group" style={{ marginBottom: 24 }}>
-              <label className="input-label">ميزانية المصروف الشهري (ريال)</label>
-              <input className="input" type="number" inputMode="numeric"
-                placeholder="مثال: 1500" value={expenseBudget} onChange={e => setExpenseBudget(e.target.value)} />
             </div>
 
             <div className="input-group" style={{ marginBottom: 32 }}>

@@ -8,7 +8,7 @@ export const useApp = () => useContext(AppContext);
 
 const DEFAULT_SETTINGS = {
   salary: 0, salaryDay: 25, currency: 'ريال',
-  onboardingComplete: false, expenseBudget: 1500,
+  onboardingComplete: false,
 };
 
 export function AppProvider({ children }) {
@@ -16,7 +16,6 @@ export function AppProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [commitments, setCommitments] = useState([]);
   const [goals, setGoals] = useState([]);
-  const [expenses, setExpenses] = useState([]);
   const [banks, setBanks] = useState([]);
   const [monthlyRecords, setMonthlyRecords] = useState([]);
   const [page, setPage] = useState('loading');
@@ -25,11 +24,10 @@ export function AppProvider({ children }) {
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
-    const [s, c, g, e, b, mr] = await Promise.all([
+    const [s, c, g, b, mr] = await Promise.all([
       db.getAllSettings(),
       db.getCommitments(),
       db.getGoals(),
-      db.getExpenses(),
       db.getBanks(),
       db.getMonthlyRecords(),
     ]);
@@ -37,7 +35,6 @@ export function AppProvider({ children }) {
     setSettings(merged);
     setCommitments(c);
     setGoals(g);
-    setExpenses(e);
     setBanks(b);
     setMonthlyRecords(mr);
 
@@ -106,20 +103,8 @@ export function AppProvider({ children }) {
     setGoals(prev => prev.map(g => g.id === id ? updated : g));
   }, [goals]);
 
-  const addExpense = useCallback(async (data) => {
-    const today = todayISO();
-    const item = { id: uid(), date: today, month: monthFromDate(today), ...data };
-    await db.saveExpense(item);
-    setExpenses(prev => [...prev, item]);
-  }, []);
-
-  const deleteExpense = useCallback(async (id) => {
-    await db.deleteExpense(id);
-    setExpenses(prev => prev.filter(e => e.id !== id));
-  }, []);
-
   const addBank = useCallback(async (data) => {
-    const item = { id: uid(), transferredMonths: [], ...data };
+    const item = { id: uid(), ...data };
     await db.saveBank(item);
     setBanks(prev => [...prev, item]);
     return item;
@@ -151,12 +136,11 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      loading, settings, commitments, goals, expenses, banks, monthlyRecords,
+      loading, settings, commitments, goals, banks, monthlyRecords,
       page, setPage, currentMonthRecord,
       privacyMode, togglePrivacy, fmt,
       updateSettings, addCommitment, updateCommitment, deleteCommitment,
       addGoal, updateGoal, deleteGoal, addGoalAmount,
-      addExpense, deleteExpense,
       addBank, updateBank, deleteBank,
       confirmSalaryDay,
     }}>
