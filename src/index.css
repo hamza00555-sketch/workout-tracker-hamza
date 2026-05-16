@@ -107,7 +107,7 @@ html, body {
 .input[type="number"], .input[inputmode="numeric"] { direction: ltr; text-align: center; font-family: 'Mestika', 'Cairo', sans-serif; }
 
 /* Force numbers to render LTR to avoid bidi issues */
-.num { display: inline-block; direction: ltr; unicode-bidi: embed; font-variant-numeric: tabular-nums; font-family: 'Mestika', sans-serif; }
+.num { display: inline-block; direction: ltr; unicode-bidi: embed; font-variant-numeric: tabular-nums; font-family: 'Cairo', sans-serif; }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
