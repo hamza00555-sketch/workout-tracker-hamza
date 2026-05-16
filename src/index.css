@@ -1,5 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 
+@font-face { font-family: 'Mestika'; src: url('/fonts/Mestika-Thin.otf') format('opentype'); font-weight: 100; font-display: swap; }
+@font-face { font-family: 'Mestika'; src: url('/fonts/Mestika-ExtraLight.otf') format('opentype'); font-weight: 200; font-display: swap; }
+@font-face { font-family: 'Mestika'; src: url('/fonts/Mestika-Light.otf') format('opentype'); font-weight: 300; font-display: swap; }
+@font-face { font-family: 'Mestika'; src: url('/fonts/Mestika-Regular.otf') format('opentype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Mestika'; src: url('/fonts/Mestika-Medium.otf') format('opentype'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Mestika'; src: url('/fonts/Mestika-SemiBold.otf') format('opentype'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Mestika'; src: url('/fonts/Mestika-Bold.otf') format('opentype'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Mestika'; src: url('/fonts/Mestika-ExtraBold.otf') format('opentype'); font-weight: 800; font-display: swap; }
+@font-face { font-family: 'Mestika'; src: url('/fonts/Mestika-Black.otf') format('opentype'); font-weight: 900; font-display: swap; }
+
 :root {
   --bg: #0D0A26;
   --bg2: #13103A;
@@ -28,7 +38,7 @@ html, body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Cairo', sans-serif;
+  font-family: 'Mestika', 'Cairo', sans-serif;
   direction: rtl;
   overscroll-behavior: none;
 }
@@ -62,7 +72,7 @@ html, body {
 
 .btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  border: none; cursor: pointer; font-family: 'Cairo', sans-serif;
+  border: none; cursor: pointer; font-family: 'Mestika', 'Cairo', sans-serif;
   font-weight: 700; border-radius: var(--r-sm); padding: 14px 20px;
   font-size: 15px; transition: opacity .15s, transform .1s;
   -webkit-user-select: none; user-select: none;
@@ -79,7 +89,7 @@ html, body {
 .input-label { font-size: 13px; color: var(--text2); font-weight: 600; }
 .input {
   background: var(--bg2); border: 1.5px solid var(--border); border-radius: var(--r-sm);
-  color: var(--text); font-family: 'Cairo', sans-serif; font-size: 16px;
+  color: var(--text); font-family: 'Mestika', 'Cairo', sans-serif; font-size: 16px;
   padding: 13px 14px; width: 100%; outline: none; transition: border-color .2s;
 }
 .input:focus { border-color: var(--primary); }
@@ -88,14 +98,14 @@ html, body {
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: all .15s; border: none; font-family: 'Cairo', sans-serif;
+  cursor: pointer; transition: all .15s; border: none; font-family: 'Mestika', 'Cairo', sans-serif;
 }
 .chip-ghost { background: var(--card2); color: var(--text2); }
 .chip.active { background: var(--primary); color: #fff; }
 
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .section-title { font-size: 16px; font-weight: 700; }
-.section-action { font-size: 13px; color: var(--primary); font-weight: 600; cursor: pointer; background: none; border: none; font-family: 'Cairo', sans-serif; }
+.section-action { font-size: 13px; color: var(--primary); font-weight: 600; cursor: pointer; background: none; border: none; font-family: 'Mestika', 'Cairo', sans-serif; }
 
 .progress-track { background: var(--border); border-radius: 10px; height: 8px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 10px; transition: width .5s ease; }
