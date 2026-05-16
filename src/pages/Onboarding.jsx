@@ -65,10 +65,11 @@ export default function Onboarding() {
         {step === 1 && (
           <div className="anim-fadeup">
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
-              <img src="/icon.svg" alt="راتبي" style={{ width: 88, height: 88, borderRadius: 20, marginBottom: 14 }} />
+              <img src="/assets/icons/app-icon.png" alt="راتبي" style={{ width: 88, height: 88, borderRadius: 20, marginBottom: 14 }} />
               <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>تحكم في مالك،</h1>
               <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--accent)', marginBottom: 8 }}>وحقق أهدافك.</h1>
               <p style={{ color: 'var(--text2)', fontSize: 14 }}>ابدأ بإدخال راتبك الشهري</p>
+              <img src="/assets/icons/illus-welcome.png" alt="" style={{ width: '100%', maxWidth: 260, marginTop: 16 }} />
             </div>
             <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 700, marginBottom: 8 }}>الخطوة ١ من ٣</div>
             <h2 style={{ fontSize: 20, fontWeight: 900, marginBottom: 20 }}>راتبك الشهري</h2>
@@ -150,9 +151,14 @@ export default function Onboarding() {
         {/* STEP 3 */}
         {step === 3 && (
           <div className="anim-fadeup">
-            <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 700, marginBottom: 8 }}>الخطوة ٣ من ٣</div>
-            <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>أهدافك المالية</h1>
-            <p style={{ color: 'var(--text2)', marginBottom: 24, fontSize: 14 }}>سفر، سيارة، ادخار طوارئ...</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 700, marginBottom: 8 }}>الخطوة ٣ من ٣</div>
+                <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>أهدافك المالية</h1>
+                <p style={{ color: 'var(--text2)', fontSize: 14 }}>سفر، سيارة، ادخار طوارئ...</p>
+              </div>
+              <img src="/assets/icons/illus-confirm.png" alt="" style={{ width: 110, flexShrink: 0 }} />
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
               {goals.map(g => {

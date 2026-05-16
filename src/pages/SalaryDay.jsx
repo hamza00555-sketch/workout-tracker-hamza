@@ -45,7 +45,7 @@ export default function SalaryDay() {
         padding: '52px 20px 24px', textAlign: 'center',
         borderBottom: '1px solid var(--border)',
       }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>💰</div>
+        <img src="/assets/icons/illus-salary.png" alt="" style={{ width: 160, marginBottom: 4 }} />
         <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>يوم الراتب</h1>
         <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 20 }}>راجع توزيع راتبك قبل ما يتطير</p>
         <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>

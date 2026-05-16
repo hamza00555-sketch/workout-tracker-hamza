@@ -19,7 +19,7 @@ function AppRouter() {
       alignItems: 'center', justifyContent: 'center', gap: 0,
       background: 'var(--bg)',
     }}>
-      <img src="/icon.svg" alt="راتبي" style={{ width: 120, height: 120, borderRadius: 28, marginBottom: 20 }} />
+      <img src="/assets/icons/app-icon.png" alt="راتبي" style={{ width: 120, height: 120, borderRadius: 28, marginBottom: 20 }} />
       <div style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>راتبي</div>
       <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 28 }}>تحكم في مالك، وحقق أهدافك</div>
       <div style={{ width: 48, height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
