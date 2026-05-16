@@ -68,13 +68,33 @@ export function checkCommitmentsAndNotify(commitments) {
   localStorage.setItem(notifiedKey, JSON.stringify([...notified]));
 }
 
+// Shows up to 3 tips per day (morning ~8, afternoon ~1, evening ~7)
 export function showRandomTipIfDue() {
   if (!canNotify()) return;
-  const todayStr = new Date().toISOString().split('T')[0];
-  if (localStorage.getItem('ratebi-last-tip') === todayStr) return;
-  const tip = TIPS[Math.floor(Math.random() * TIPS.length)];
-  showNotification('نصيحة مالية 💡', tip, { tag: 'financial-tip' });
-  localStorage.setItem('ratebi-last-tip', todayStr);
+
+  const now = new Date();
+  const hour = now.getHours();
+  const todayStr = now.toISOString().split('T')[0];
+
+  // Determine which slot of the day we're in: 0=morning(8-12), 1=afternoon(13-18), 2=evening(19-23)
+  let slot;
+  if (hour >= 8 && hour < 13) slot = 0;
+  else if (hour >= 13 && hour < 19) slot = 1;
+  else if (hour >= 19) slot = 2;
+  else return; // before 8am — skip
+
+  const key = `ratebi-tip-${todayStr}-${slot}`;
+  if (localStorage.getItem(key)) return;
+
+  const usedToday = [0, 1, 2]
+    .filter(s => localStorage.getItem(`ratebi-tip-${todayStr}-${s}`))
+    .map(s => Number(localStorage.getItem(`ratebi-tip-${todayStr}-${s}`)));
+
+  let idx;
+  do { idx = Math.floor(Math.random() * TIPS.length); } while (usedToday.includes(idx));
+
+  showNotification('نصيحة مالية 💡', TIPS[idx], { tag: `financial-tip-${slot}` });
+  localStorage.setItem(key, String(idx));
 }
 
 export async function registerPeriodicSync() {

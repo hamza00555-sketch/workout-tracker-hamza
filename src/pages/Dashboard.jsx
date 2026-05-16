@@ -11,8 +11,8 @@ export default function Dashboard() {
 
   const record = currentMonthRecord;
   const salary = record?.salary || settings.salary || 0;
-  const commitmentsTotal = record?.commitmentsTotal || calcCommitmentsTotal(commitments);
-  const goalsTotal = record?.goalsTotal || calcGoalsMonthlyTotal(goals);
+  const commitmentsTotal = calcCommitmentsTotal(commitments);
+  const goalsTotal = calcGoalsMonthlyTotal(goals);
   const remaining = salary - commitmentsTotal - goalsTotal;
 
   const segments = [

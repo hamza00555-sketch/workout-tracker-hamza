@@ -69,17 +69,30 @@ async function handlePeriodicSync() {
       }
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const lastTipDate = await getMetaValue('lastTipDate');
-    if (lastTipDate !== todayStr) {
-      const tip = TIPS[Math.floor(Math.random() * TIPS.length)];
-      await self.registration.showNotification('نصيحة مالية 💡', {
-        body: tip,
-        icon: '/assets/icons/app-icon.png',
-        badge: '/icon-192.png',
-        tag: 'financial-tip',
-      });
-      await setMetaValue('lastTipDate', todayStr);
+    const now = new Date();
+    const hour = now.getHours();
+    const todayStr = now.toISOString().split('T')[0];
+    let slot;
+    if (hour >= 8 && hour < 13) slot = 0;
+    else if (hour >= 13 && hour < 19) slot = 1;
+    else if (hour >= 19) slot = 2;
+
+    if (slot !== undefined) {
+      const tipKey = `tip-${todayStr}-${slot}`;
+      const lastTipKey = await getMetaValue(tipKey);
+      if (!lastTipKey) {
+        const usedKeys = await Promise.all([0, 1, 2].map(s => getMetaValue(`tip-${todayStr}-${s}`)));
+        const used = usedKeys.filter(Boolean).map(Number);
+        let idx;
+        do { idx = Math.floor(Math.random() * TIPS.length); } while (used.includes(idx));
+        await self.registration.showNotification('نصيحة مالية 💡', {
+          body: TIPS[idx],
+          icon: '/assets/icons/app-icon.png',
+          badge: '/icon-192.png',
+          tag: `financial-tip-${slot}`,
+        });
+        await setMetaValue(tipKey, String(idx));
+      }
     }
   } catch {}
 }
