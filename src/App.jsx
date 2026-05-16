@@ -7,11 +7,12 @@ import Commitments from './pages/Commitments.jsx';
 import Banks from './pages/Banks.jsx';
 import Goals from './pages/Goals.jsx';
 import Settings from './pages/Settings.jsx';
+import LockScreen from './pages/LockScreen.jsx';
 
 const NAV_PAGES = ['dashboard', 'commitments', 'banks', 'goals', 'settings'];
 
 function AppRouter() {
-  const { page, loading } = useApp();
+  const { page, loading, locked } = useApp();
 
   if (loading) return (
     <div style={{
@@ -32,6 +33,7 @@ function AppRouter() {
     </div>
   );
 
+  if (locked) return <LockScreen />;
   if (page === 'onboarding') return <Onboarding />;
   if (page === 'salaryDay') return <SalaryDay />;
 

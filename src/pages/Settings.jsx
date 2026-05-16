@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import * as db from '../db/index.js';
 import { uid } from '../utils/format.js';
+import {
+  getPermissionStatus, requestPermission, registerPeriodicSync,
+  hashPin, isBiometricAvailable, registerBiometric, removeBiometric,
+} from '../utils/notifications.js';
 
 const TEMPLATE = `الراتب:
 يوم الراتب: 25
@@ -70,6 +74,100 @@ export default function Settings() {
   const [salaryDay, setSalaryDay] = useState(settings.salaryDay);
   const [saved, setSaved] = useState(false);
   const [backupError, setBackupError] = useState('');
+
+  // Notifications state
+  const [notifStatus, setNotifStatus] = useState(getPermissionStatus());
+
+  // Security / lock state
+  const [lockEnabled, setLockEnabledState] = useState(!!settings.lockEnabled);
+  const [pinSetup, setPinSetup] = useState(null); // null | 'enter' | 'confirm' | 'disable'
+  const [pinInput, setPinInput] = useState('');
+  const [pinFirst, setPinFirst] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [biometricAvail, setBiometricAvail] = useState(false);
+  const [biometricEnabled, setBiometricEnabledState] = useState(!!settings.biometricEnabled);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+
+  useEffect(() => {
+    isBiometricAvailable().then(ok => setBiometricAvail(ok && !!settings.lockEnabled && !!settings.pinHash));
+  }, [settings.lockEnabled, settings.pinHash]);
+
+  async function handleNotifToggle() {
+    if (notifStatus === 'granted') return;
+    const ok = await requestPermission();
+    const status = ok ? 'granted' : 'denied';
+    setNotifStatus(status);
+    if (ok) registerPeriodicSync();
+  }
+
+  async function startLockSetup() {
+    setPinInput(''); setPinFirst(''); setPinError('');
+    if (lockEnabled) {
+      // Disabling: confirm current PIN first
+      setPinSetup('disable');
+    } else {
+      // Enabling: set new PIN
+      setPinSetup('enter');
+    }
+  }
+
+  async function handlePinDigit(d) {
+    if (pinInput.length >= 4) return;
+    const next = pinInput + d;
+    setPinInput(next);
+    setPinError('');
+
+    if (next.length < 4) return;
+
+    if (pinSetup === 'enter') {
+      setPinFirst(next);
+      setPinInput('');
+      setPinSetup('confirm');
+    } else if (pinSetup === 'confirm') {
+      if (next !== pinFirst) {
+        setPinError('الرمزان غير متطابقين، حاول مجدداً');
+        setPinInput('');
+        setPinSetup('enter');
+        setPinFirst('');
+      } else {
+        const hash = await hashPin(next);
+        await updateSettings({ lockEnabled: true, pinHash: hash });
+        setLockEnabledState(true);
+        setPinSetup(null);
+        setBiometricAvail(await isBiometricAvailable());
+      }
+    } else if (pinSetup === 'disable') {
+      const hash = await hashPin(next);
+      if (hash !== settings.pinHash) {
+        setPinError('رمز الدخول غير صحيح');
+        setPinInput('');
+      } else {
+        await updateSettings({ lockEnabled: false, pinHash: null, biometricEnabled: false });
+        setLockEnabledState(false);
+        setBiometricEnabledState(false);
+        removeBiometric();
+        setPinSetup(null);
+      }
+    }
+  }
+
+  async function handleBiometricToggle() {
+    if (biometricEnabled) {
+      await updateSettings({ biometricEnabled: false });
+      setBiometricEnabledState(false);
+      removeBiometric();
+      return;
+    }
+    setBiometricLoading(true);
+    const ok = await registerBiometric();
+    if (ok) {
+      await updateSettings({ biometricEnabled: true });
+      setBiometricEnabledState(true);
+    } else {
+      setPinError('فشل تسجيل البصمة — تأكد من دعم الجهاز');
+    }
+    setBiometricLoading(false);
+  }
 
   const [importText, setImportText] = useState(TEMPLATE);
   const [importing, setImporting] = useState(false);
@@ -170,7 +268,7 @@ export default function Settings() {
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="input-group">
               <label className="input-label">الراتب الشهري (ريال)</label>
-              <input className="input" type="number" inputMode="numeric"
+              <input className="input" type="text" inputMode="decimal"
                 value={salary} onChange={e => setSalary(e.target.value)} />
             </div>
             <div className="input-group">
@@ -283,6 +381,141 @@ export default function Settings() {
             <button className="btn btn-outline" onClick={() => setPage('salaryDay')}>
               فتح شاشة يوم الراتب
             </button>
+          </div>
+        </section>
+
+        {/* Security */}
+        <section>
+          <div style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 700, marginBottom: 12 }}>🔒 أمان التطبيق</div>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Lock toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>قفل التطبيق برمز سري</div>
+                <div style={{ color: 'var(--text2)', fontSize: 12, marginTop: 2 }}>
+                  {lockEnabled ? 'مفعّل — التطبيق محمي برمز دخول' : 'غير مفعّل'}
+                </div>
+              </div>
+              <button onClick={startLockSetup} style={{
+                background: lockEnabled ? 'var(--accent)' : 'var(--border)',
+                border: 'none', borderRadius: 20, width: 52, height: 28, cursor: 'pointer',
+                position: 'relative', transition: 'background .25s',
+              }}>
+                <div style={{
+                  width: 22, height: 22, borderRadius: '50%', background: '#fff',
+                  position: 'absolute', top: 3,
+                  right: lockEnabled ? 4 : 'auto',
+                  left: lockEnabled ? 'auto' : 4,
+                  transition: 'all .25s',
+                  boxShadow: '0 1px 4px rgba(0,0,0,.3)',
+                }} />
+              </button>
+            </div>
+
+            {/* PIN setup inline numpad */}
+            {pinSetup && (
+              <div style={{ background: 'var(--bg2)', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
+                <div style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 12 }}>
+                  {pinSetup === 'enter' && 'أدخل رمز الدخول الجديد (4 أرقام)'}
+                  {pinSetup === 'confirm' && 'أكد رمز الدخول'}
+                  {pinSetup === 'disable' && 'أدخل رمزك الحالي لإيقاف القفل'}
+                </div>
+                <div style={{ display: 'flex', gap: 14, justifyContent: 'center', marginBottom: 16 }}>
+                  {[0, 1, 2, 3].map(i => (
+                    <div key={i} style={{
+                      width: 14, height: 14, borderRadius: '50%',
+                      background: pinInput.length > i ? 'var(--primary)' : 'var(--border)',
+                      transition: 'background .15s',
+                    }} />
+                  ))}
+                </div>
+                {pinError && <div style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 10 }}>{pinError}</div>}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, maxWidth: 220, margin: '0 auto' }}>
+                  {[1,2,3,4,5,6,7,8,9].map(d => (
+                    <button key={d} onClick={() => handlePinDigit(String(d))} style={{
+                      height: 52, borderRadius: 10, border: 'none', cursor: 'pointer',
+                      background: 'var(--card)', color: 'var(--text)',
+                      fontSize: 20, fontWeight: 700, fontFamily: 'Cairo, sans-serif',
+                    }}>{d}</button>
+                  ))}
+                  <div />
+                  <button onClick={() => handlePinDigit('0')} style={{
+                    height: 52, borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: 'var(--card)', color: 'var(--text)',
+                    fontSize: 20, fontWeight: 700, fontFamily: 'Cairo, sans-serif',
+                  }}>0</button>
+                  <button onClick={() => { setPinInput(p => p.slice(0, -1)); setPinError(''); }} style={{
+                    height: 52, borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: 'var(--card)', color: 'var(--text2)', fontSize: 18,
+                  }}>⌫</button>
+                </div>
+                <button onClick={() => { setPinSetup(null); setPinInput(''); setPinError(''); }}
+                  style={{ marginTop: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 13 }}>
+                  إلغاء
+                </button>
+              </div>
+            )}
+
+            {/* Biometric toggle — only when lock is enabled */}
+            {lockEnabled && biometricAvail && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 15 }}>البصمة / التعرف على الوجه</div>
+                  <div style={{ color: 'var(--text2)', fontSize: 12, marginTop: 2 }}>
+                    {biometricEnabled ? 'مفعّل — يمكنك الدخول ببصمتك' : 'غير مفعّل'}
+                  </div>
+                </div>
+                <button onClick={handleBiometricToggle} disabled={biometricLoading} style={{
+                  background: biometricEnabled ? 'var(--accent)' : 'var(--border)',
+                  border: 'none', borderRadius: 20, width: 52, height: 28, cursor: 'pointer',
+                  position: 'relative', transition: 'background .25s', opacity: biometricLoading ? .6 : 1,
+                }}>
+                  <div style={{
+                    width: 22, height: 22, borderRadius: '50%', background: '#fff',
+                    position: 'absolute', top: 3,
+                    right: biometricEnabled ? 4 : 'auto',
+                    left: biometricEnabled ? 'auto' : 4,
+                    transition: 'all .25s',
+                    boxShadow: '0 1px 4px rgba(0,0,0,.3)',
+                  }} />
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Notifications */}
+        <section>
+          <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 700, marginBottom: 12 }}>🔔 الإشعارات</div>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>إشعارات التطبيق</div>
+                <div style={{ color: 'var(--text2)', fontSize: 12, marginTop: 2 }}>
+                  {notifStatus === 'granted' && 'مفعّلة ✓'}
+                  {notifStatus === 'denied' && 'محظورة — فعّلها من إعدادات الجهاز'}
+                  {notifStatus === 'default' && 'اضغط للسماح بالإشعارات'}
+                  {notifStatus === 'unsupported' && 'غير مدعومة على هذا المتصفح'}
+                </div>
+              </div>
+              {notifStatus !== 'granted' && notifStatus !== 'unsupported' && notifStatus !== 'denied' && (
+                <button onClick={handleNotifToggle} className="btn btn-primary" style={{ width: 'auto', padding: '8px 16px', fontSize: 13 }}>
+                  تفعيل
+                </button>
+              )}
+              {notifStatus === 'granted' && (
+                <div style={{ color: 'var(--accent)', fontSize: 18 }}>✓</div>
+              )}
+            </div>
+
+            <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ color: 'var(--text2)', fontSize: 12, lineHeight: 1.8 }}>
+                ستتلقى إشعارات عند:
+                <br />• استحقاق أي التزام مالي اليوم أو غداً
+                <br />• نصائح مالية مفيدة بين الحين والآخر
+              </div>
+            </div>
           </div>
         </section>
 

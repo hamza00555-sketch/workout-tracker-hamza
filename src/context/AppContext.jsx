@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import * as db from '../db/index.js';
 import { currentMonth, uid, todayISO, monthFromDate, formatAmount } from '../utils/format.js';
 import { calcGoalMonthly } from '../utils/calc.js';
+import { checkCommitmentsAndNotify, showRandomTipIfDue, registerPeriodicSync } from '../utils/notifications.js';
 
 const AppContext = createContext();
 export const useApp = () => useContext(AppContext);
@@ -20,6 +21,7 @@ export function AppProvider({ children }) {
   const [monthlyRecords, setMonthlyRecords] = useState([]);
   const [page, setPage] = useState('loading');
   const [privacyMode, setPrivacyMode] = useState(false);
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -48,6 +50,17 @@ export function AppProvider({ children }) {
         setPage('salaryDay');
       } else {
         setPage('dashboard');
+      }
+    }
+
+    if (merged.lockEnabled && merged.pinHash) {
+      setLocked(true);
+    } else {
+      // No lock — run notifications immediately on load
+      if (merged.onboardingComplete) {
+        checkCommitmentsAndNotify(c);
+        showRandomTipIfDue();
+        registerPeriodicSync();
       }
     }
     setLoading(false);
@@ -123,6 +136,26 @@ export function AppProvider({ children }) {
   const togglePrivacy = useCallback(() => setPrivacyMode(v => !v), []);
   const fmt = useCallback((n) => privacyMode ? '••••' : formatAmount(n), [privacyMode]);
 
+  const unlock = useCallback(() => {
+    setLocked(false);
+    // Run notification checks after successful unlock
+    checkCommitmentsAndNotify(commitments);
+    showRandomTipIfDue();
+    registerPeriodicSync();
+  }, [commitments]);
+
+  // Auto-lock after 60 seconds in background
+  useEffect(() => {
+    if (!settings.lockEnabled || !settings.pinHash) return;
+    let timer;
+    const onHide = () => { timer = setTimeout(() => setLocked(true), 60_000); };
+    const onShow = () => clearTimeout(timer);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') onHide(); else onShow();
+    });
+    return () => { clearTimeout(timer); };
+  }, [settings.lockEnabled, settings.pinHash]);
+
   const confirmSalaryDay = useCallback(async (record) => {
     await db.saveMonthlyRecord(record);
     setMonthlyRecords(prev => {
@@ -139,6 +172,7 @@ export function AppProvider({ children }) {
       loading, settings, commitments, goals, banks, monthlyRecords,
       page, setPage, currentMonthRecord,
       privacyMode, togglePrivacy, fmt,
+      locked, unlock,
       updateSettings, addCommitment, updateCommitment, deleteCommitment,
       addGoal, updateGoal, deleteGoal, addGoalAmount,
       addBank, updateBank, deleteBank,
