@@ -4,6 +4,7 @@ import { currentMonth, currentMonthLabel, daysUntil } from '../utils/format.js';
 import { calcCommitmentsTotal, calcGoalsMonthlyTotal } from '../utils/calc.js';
 import { getCatData, COMMITMENT_CATEGORIES } from '../components/CategoryData.js';
 import DonutChart from '../components/DonutChart.jsx';
+import CatIcon from '../components/CategoryIcons.jsx';
 
 export default function Dashboard() {
   const { settings, commitments, goals, currentMonthRecord, setPage, privacyMode, togglePrivacy, fmt } = useApp();
@@ -101,7 +102,7 @@ export default function Dashboard() {
                 const cat = getCatData(COMMITMENT_CATEGORIES, c.category);
                 return (
                   <div key={c.id} className="list-item">
-                    <div className="cat-icon" style={{ background: cat.bg }}>{cat.emoji}</div>
+                    <div className="cat-icon" style={{ background: cat.bg }}><CatIcon id={cat.id} /></div>
                     <div className="list-item-info">
                       <div className="list-item-name">{c.name}</div>
                       <div className="list-item-sub">

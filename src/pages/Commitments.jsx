@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext.jsx';
 import { daysUntil } from '../utils/format.js';
 import { getCatData, COMMITMENT_CATEGORIES } from '../components/CategoryData.js';
 import BottomSheet from '../components/BottomSheet.jsx';
+import CatIcon from '../components/CategoryIcons.jsx';
 
 const EMPTY_FORM = { name: '', amount: '', category: 'rent', dayOfMonth: 1, bankId: null, accountId: null };
 
@@ -107,7 +108,7 @@ export default function Commitments() {
             return (
               <div key={c.id} className="anim-fadeup">
                 <div className="list-item" style={{ opacity: c.paidThisMonth ? 0.7 : 1 }}>
-                  <div className="cat-icon" style={{ background: cat.bg }}>{cat.emoji}</div>
+                  <div className="cat-icon" style={{ background: cat.bg }}><CatIcon id={cat.id} /></div>
                   <div className="list-item-info">
                     <div className="list-item-name" style={{ textDecoration: c.paidThisMonth ? 'line-through' : 'none' }}>
                       {c.name}

@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext.jsx';
 import { currentMonth } from '../utils/format.js';
 import { calcCommitmentsTotal, calcGoalsMonthlyTotal, calcRemaining } from '../utils/calc.js';
 import { getCatData, COMMITMENT_CATEGORIES, GOAL_CATEGORIES } from '../components/CategoryData.js';
+import CatIcon from '../components/CategoryIcons.jsx';
 
 export default function SalaryDay() {
   const { settings, commitments, goals, confirmSalaryDay, fmt } = useApp();
@@ -75,7 +76,9 @@ export default function SalaryDay() {
               const cat = getCatData(COMMITMENT_CATEGORIES, c.category);
               return (
                 <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: 20 }}>{cat.emoji}</div>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <CatIcon id={cat.id} size={18} />
+                  </div>
                   <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{c.name}</span>
                   <span style={{ color: 'var(--danger)', fontWeight: 700, fontSize: 14 }}>
                     <span className="num">{fmt(c.amount)}</span> ريال
@@ -93,7 +96,9 @@ export default function SalaryDay() {
               const cat = getCatData(GOAL_CATEGORIES, g.category);
               return (
                 <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: 20 }}>{cat.emoji}</div>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <CatIcon id={cat.id} size={18} />
+                  </div>
                   <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{g.name}</span>
                   <input
                     type="number" inputMode="numeric" value={goalContribs[g.id] || ''}

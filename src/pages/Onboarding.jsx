@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext.jsx';
 import { COMMITMENT_CATEGORIES, GOAL_CATEGORIES, getCatData } from '../components/CategoryData.js';
 import { uid, formatAmount } from '../utils/format.js';
 import { calcGoalMonthly } from '../utils/calc.js';
+import CatIcon from '../components/CategoryIcons.jsx';
 
 export default function Onboarding() {
   const { updateSettings, addCommitment, addGoal, setPage } = useApp();
@@ -112,7 +113,7 @@ export default function Onboarding() {
                 const cat = getCatData(COMMITMENT_CATEGORIES, c.category);
                 return (
                   <div key={c.id} className="list-item">
-                    <div className="cat-icon" style={{ background: cat.bg }}>{cat.emoji}</div>
+                    <div className="cat-icon" style={{ background: cat.bg }}><CatIcon id={cat.id} /></div>
                     <div className="list-item-info">
                       <div className="list-item-name">{c.name}</div>
                       <div className="list-item-sub">{cat.label} · يوم {c.dayOfMonth}</div>
@@ -158,7 +159,7 @@ export default function Onboarding() {
                 const cat = getCatData(GOAL_CATEGORIES, g.category);
                 return (
                   <div key={g.id} className="list-item">
-                    <div className="cat-icon" style={{ background: cat.bg }}>{cat.emoji}</div>
+                    <div className="cat-icon" style={{ background: cat.bg }}><CatIcon id={cat.id} /></div>
                     <div className="list-item-info">
                       <div className="list-item-name">{g.name}</div>
                       <div className="list-item-sub"><span className="num">{formatAmount(g.monthlyContribution)}</span> ريال / شهر</div>

@@ -4,6 +4,7 @@ import { calcGoalProgress, calcGoalMonthly, monthsUntil } from '../utils/calc.js
 import { getCatData, GOAL_CATEGORIES } from '../components/CategoryData.js';
 import BottomSheet from '../components/BottomSheet.jsx';
 import SavingsCalc from './SavingsCalc.jsx';
+import CatIcon from '../components/CategoryIcons.jsx';
 
 const EMPTY_FORM = { name: '', targetAmount: '', targetDate: '', category: 'travel', monthlyContribution: '', bankId: null, accountId: null };
 
@@ -256,7 +257,7 @@ function GoalCard({ goal, banks, onEdit, onAdd, completed }) {
   return (
     <div className="card anim-fadeup" style={{ opacity: completed ? 0.7 : 1 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
-        <div className="cat-icon" style={{ background: cat.bg, fontSize: 24 }}>{cat.emoji}</div>
+        <div className="cat-icon" style={{ background: cat.bg }}><CatIcon id={cat.id} size={24} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 16 }}>{goal.name}</div>
           <div style={{ color: 'var(--text2)', fontSize: 12, marginTop: 2 }}>
