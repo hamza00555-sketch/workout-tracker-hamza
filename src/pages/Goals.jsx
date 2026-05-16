@@ -4,6 +4,7 @@ import { formatAmount } from '../utils/format.js';
 import { calcGoalProgress, calcGoalMonthly, monthsUntil } from '../utils/calc.js';
 import { getCatData, GOAL_CATEGORIES } from '../components/CategoryData.js';
 import BottomSheet from '../components/BottomSheet.jsx';
+import SavingsCalc from './SavingsCalc.jsx';
 
 const EMPTY_FORM = { name: '', targetAmount: '', targetDate: '', category: 'travel', monthlyContribution: '' };
 
@@ -11,6 +12,7 @@ export default function Goals() {
   const { goals, addGoal, updateGoal, deleteGoal, addGoalAmount } = useApp();
   const [sheet, setSheet] = useState(false);
   const [addAmountSheet, setAddAmountSheet] = useState(false);
+  const [calcSheet, setCalcSheet] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [addAmountGoal, setAddAmountGoal] = useState(null);
@@ -58,10 +60,22 @@ export default function Goals() {
   return (
     <div className="page">
       <div style={{ padding: '52px 16px 16px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>أهدافي</h1>
-        <p style={{ color: 'var(--text2)', fontSize: 13 }}>
-          {active.length} هدف جارٍ · {completed.length} مكتمل
-        </p>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>أهدافي</h1>
+            <p style={{ color: 'var(--text2)', fontSize: 13 }}>
+              {active.length} هدف جارٍ · {completed.length} مكتمل
+            </p>
+          </div>
+          <button onClick={() => setCalcSheet(true)} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+            background: 'var(--primary-dim)', border: '1px solid var(--primary)',
+            borderRadius: 12, cursor: 'pointer', fontFamily: 'Mestika, Cairo, sans-serif',
+            fontWeight: 700, fontSize: 13, color: 'var(--primary)',
+          }}>
+            🧮 الحاسبة
+          </button>
+        </div>
       </div>
 
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -137,6 +151,14 @@ export default function Goals() {
             </button>
           </div>
         </div>
+      </BottomSheet>
+
+      {/* Savings Calc Sheet */}
+      <BottomSheet open={calcSheet} onClose={() => setCalcSheet(false)} title="🧮 حاسبة الادخار">
+        <SavingsCalc
+          onClose={() => setCalcSheet(false)}
+          onAddGoal={async (data) => { await addGoal(data); }}
+        />
       </BottomSheet>
 
       {/* Add Amount Sheet */}
