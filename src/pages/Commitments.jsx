@@ -56,11 +56,10 @@ export default function Commitments() {
   }
 
   function getBadge(c) {
-    if (c.paidThisMonth) return { label: 'مدفوع ✓', cls: 'badge-green' };
-    if (c.days === 0) return { label: 'اليوم!', cls: 'badge-red' };
-    if (c.days <= 3) return { label: `بعد ${c.days} أيام`, cls: 'badge-red' };
-    if (c.days <= 7) return { label: `بعد ${c.days} أيام`, cls: 'badge-yellow' };
-    return { label: `يوم ${c.dayOfMonth}`, cls: 'badge-purple' };
+    if (c.paidThisMonth) return { label: 'مدفوع ✓', cls: 'badge-green', isNum: false };
+    if (c.days === 0) return { label: 'اليوم!', cls: 'badge-red', isNum: false };
+    if (c.days <= 7) return { label: <>بعد <span className="num">{c.days}</span> أيام</>, cls: c.days <= 3 ? 'badge-red' : 'badge-yellow', isNum: true };
+    return { label: <>يوم <span className="num">{c.dayOfMonth}</span></>, cls: 'badge-purple', isNum: true };
   }
 
   return (
@@ -70,10 +69,14 @@ export default function Commitments() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 900 }}>التزاماتي</h1>
-            <p style={{ color: 'var(--text2)', fontSize: 13 }}>{paidCount} / {commitments.length} مدفوع</p>
+            <p style={{ color: 'var(--text2)', fontSize: 13 }}>
+              <span className="num">{paidCount}</span> / <span className="num">{commitments.length}</span> مدفوع
+            </p>
           </div>
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--danger)' }}>{formatAmount(total)}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--danger)' }}>
+              <span className="num">{formatAmount(total)}</span>
+            </div>
             <div style={{ fontSize: 11, color: 'var(--text2)' }}>ريال / شهر</div>
           </div>
         </div>
@@ -112,7 +115,9 @@ export default function Commitments() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                    <div className="list-item-amount" style={{ color: 'var(--danger)' }}>{formatAmount(c.amount)}</div>
+                    <div className="list-item-amount" style={{ color: 'var(--danger)' }}>
+                      <span className="num">{formatAmount(c.amount)}</span>
+                    </div>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={() => togglePaid(c)} style={{
                         background: c.paidThisMonth ? 'var(--accent-dim)' : 'var(--card2)',

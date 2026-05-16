@@ -1,5 +1,8 @@
+// Fix: manual formatter avoids iOS en-SA returning Arabic-Indic numerals (٠١٢) that Mestika can't render
 export function formatAmount(n) {
-  return Number(n || 0).toLocaleString('en-SA');
+  const num = Math.round(Number(n || 0));
+  if (isNaN(num)) return '0';
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 export function currentMonth() {

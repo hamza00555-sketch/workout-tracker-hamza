@@ -89,11 +89,16 @@ html, body {
 .input-label { font-size: 13px; color: var(--text2); font-weight: 600; }
 .input {
   background: var(--bg2); border: 1.5px solid var(--border); border-radius: var(--r-sm);
-  color: var(--text); font-family: 'Mestika', 'Cairo', sans-serif; font-size: 16px;
+  color: var(--text); font-family: 'Cairo', sans-serif; font-size: 16px;
   padding: 13px 14px; width: 100%; outline: none; transition: border-color .2s;
+  direction: rtl;
 }
 .input:focus { border-color: var(--primary); }
 .input::placeholder { color: var(--text3); }
+.input[type="number"], .input[inputmode="numeric"] { direction: ltr; text-align: center; font-family: 'Mestika', 'Cairo', sans-serif; }
+
+/* Force numbers to render LTR to avoid bidi issues */
+.num { display: inline-block; direction: ltr; unicode-bidi: embed; font-variant-numeric: tabular-nums; }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;

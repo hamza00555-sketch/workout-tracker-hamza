@@ -134,8 +134,8 @@ export default function SavingsCalc({ onClose, onAddGoal }) {
             background: 'var(--accent-dim)', borderRadius: 10, padding: '8px 14px',
             fontSize: 13, color: 'var(--accent)', fontWeight: 600, textAlign: 'center',
           }}>
-            المتبقي للادخار: {formatAmount(remaining)} ريال
-            ({Math.round((savedNum / priceNum) * 100)}% مكتمل)
+            المتبقي للادخار: <span className="num">{formatAmount(remaining)}</span> ريال
+            (<span className="num">{Math.round((savedNum / priceNum) * 100)}</span>% مكتمل)
           </div>
         )}
 
@@ -149,7 +149,7 @@ export default function SavingsCalc({ onClose, onAddGoal }) {
                   fontFamily: 'Mestika, Cairo, sans-serif', fontWeight: 700, fontSize: 13,
                   background: Number(months) === m ? 'var(--primary)' : 'var(--card2)',
                   color: Number(months) === m ? '#fff' : 'var(--text2)', transition: 'all .15s',
-                }}>{m} شهر</button>
+                }}><span className="num">{m}</span> شهر</button>
               ))}
               <input className="input" type="number" inputMode="numeric" placeholder="أو اكتب..."
                 value={!SCENARIOS.includes(Number(months)) ? months : ''}
@@ -181,22 +181,22 @@ export default function SavingsCalc({ onClose, onAddGoal }) {
               <>
                 <div style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 6 }}>تحتاج كل شهر</div>
                 <div style={{ fontSize: 40, fontWeight: 900, color: mainAffordability.color }}>
-                  {formatAmount(resultMonthly)}
+                  <span className="num">{formatAmount(resultMonthly)}</span>
                   <span style={{ fontSize: 18 }}> ريال</span>
                 </div>
                 <div style={{ color: 'var(--text2)', fontSize: 13, marginTop: 4 }}>
-                  لمدة {months} شهر
+                  لمدة <span className="num">{months}</span> شهر
                 </div>
               </>
             ) : (
               <>
                 <div style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 6 }}>ستحقق هدفك خلال</div>
                 <div style={{ fontSize: 40, fontWeight: 900, color: mainAffordability.color }}>
-                  {resultMonths}
+                  <span className="num">{resultMonths}</span>
                   <span style={{ fontSize: 18 }}> شهر</span>
                 </div>
                 <div style={{ color: 'var(--text2)', fontSize: 13, marginTop: 4 }}>
-                  بادخار {formatAmount(maxMonthly)} ريال / شهر
+                  بادخار <span className="num">{formatAmount(maxMonthly)}</span> ريال / شهر
                 </div>
               </>
             )}
@@ -235,7 +235,7 @@ export default function SavingsCalc({ onClose, onAddGoal }) {
               }}>
                 <span>يتبقى بعد الادخار</span>
                 <span style={{ fontWeight: 800, color: mainAffordability.color }}>
-                  {formatAmount(Math.max(0, freeBudget - (mode === 'duration' ? resultMonthly : Number(maxMonthly))))} ريال
+                  <span className="num">{formatAmount(Math.max(0, freeBudget - (mode === 'duration' ? resultMonthly : Number(maxMonthly))))}</span> ريال
                 </span>
               </div>
             </div>
@@ -253,10 +253,10 @@ export default function SavingsCalc({ onClose, onAddGoal }) {
                   cursor: 'pointer', transition: 'all .15s',
                 }} onClick={() => { setMode('duration'); setMonths(String(s.months)); }}>
                   <div style={{ width: 52, fontSize: 13, color: 'var(--text2)', fontWeight: 600 }}>
-                    {s.months} شهر
+                    <span className="num">{s.months}</span> شهر
                   </div>
                   <div style={{ flex: 1, fontSize: 15, fontWeight: 800 }}>
-                    {formatAmount(s.monthly)} <span style={{ fontSize: 12, color: 'var(--text2)' }}>ريال/شهر</span>
+                    <span className="num">{formatAmount(s.monthly)}</span> <span style={{ fontSize: 12, color: 'var(--text2)' }}>ريال/شهر</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: 14 }}>{s.affordability.emoji}</span>
@@ -304,7 +304,9 @@ function BudgetImpactBar({ label, value, max, color }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
         <span style={{ fontSize: 12, color: 'var(--text2)' }}>{label}</span>
-        <span style={{ fontSize: 13, fontWeight: 700, color }}>{formatAmount(value)} ريال</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color }}>
+          <span className="num">{formatAmount(value)}</span> ريال
+        </span>
       </div>
       <div className="progress-track">
         <div className="progress-fill" style={{ width: `${pct}%`, background: color }} />

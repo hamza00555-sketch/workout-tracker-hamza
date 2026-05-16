@@ -64,7 +64,7 @@ export default function Goals() {
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>أهدافي</h1>
             <p style={{ color: 'var(--text2)', fontSize: 13 }}>
-              {active.length} هدف جارٍ · {completed.length} مكتمل
+              <span className="num">{active.length}</span> هدف جارٍ · <span className="num">{completed.length}</span> مكتمل
             </p>
           </div>
           <button onClick={() => setCalcSheet(true)} style={{
@@ -166,11 +166,11 @@ export default function Goals() {
         title={`إضافة مبلغ لـ "${addAmountGoal?.name}"`}>
         <div style={{ textAlign: 'center', padding: '16px 0' }}>
           <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 12 }}>
-            الرصيد الحالي: {formatAmount(addAmountGoal?.savedAmount || 0)} ريال
+            الرصيد الحالي: <span className="num">{formatAmount(addAmountGoal?.savedAmount || 0)}</span> ريال
           </div>
           <input type="number" inputMode="numeric" value={addAmountVal}
             onChange={e => setAddAmountVal(e.target.value)}
-            placeholder="أدخل المبلغ"
+            placeholder="0"
             style={{
               background: 'var(--bg2)', border: '1.5px solid var(--border)', borderRadius: 12,
               color: 'var(--accent)', fontFamily: 'Cairo, sans-serif', fontWeight: 800,
@@ -199,12 +199,12 @@ function GoalCard({ goal, onEdit, onAdd, completed }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 16 }}>{goal.name}</div>
           <div style={{ color: 'var(--text2)', fontSize: 12, marginTop: 2 }}>
-            {formatAmount(goal.savedAmount || 0)} / {formatAmount(goal.targetAmount)} ريال
+            <span className="num">{formatAmount(goal.savedAmount || 0)}</span> / <span className="num">{formatAmount(goal.targetAmount)}</span> ريال
           </div>
         </div>
         <div style={{ textAlign: 'left' }}>
           <div style={{ fontSize: 22, fontWeight: 900, color: completed ? 'var(--accent)' : 'var(--primary)' }}>
-            {progress}%
+            <span className="num">{progress}</span>%
           </div>
           {completed && <div style={{ fontSize: 11, color: 'var(--accent)' }}>✓ مكتمل</div>}
         </div>
@@ -220,7 +220,9 @@ function GoalCard({ goal, onEdit, onAdd, completed }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontSize: 12, color: 'var(--text2)' }}>
           {goal.monthlyContribution > 0 && !completed && (
-            <span>{formatAmount(goal.monthlyContribution)} ريال / شهر · {months} شهر متبقي</span>
+            <span>
+              <span className="num">{formatAmount(goal.monthlyContribution)}</span> ريال / شهر · <span className="num">{months}</span> شهر متبقي
+            </span>
           )}
         </div>
         {!completed && (

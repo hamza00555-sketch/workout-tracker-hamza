@@ -83,7 +83,7 @@ export default function SalaryDay() {
                   <div style={{ fontSize: 20 }}>{cat.emoji}</div>
                   <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{c.name}</span>
                   <span style={{ color: 'var(--danger)', fontWeight: 700, fontSize: 14 }}>
-                    {formatAmount(c.amount)} ريال
+                    <span className="num">{formatAmount(c.amount)}</span> ريال
                   </span>
                 </div>
               );
@@ -151,12 +151,12 @@ export default function SalaryDay() {
         }}>
           <div style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 8 }}>يتبقى لك هذا الشهر</div>
           <div style={{ fontSize: 38, fontWeight: 900, color: remainingColor }}>
-            {formatAmount(Math.abs(remaining))}
+            <span className="num">{formatAmount(Math.abs(remaining))}</span>
             <span style={{ fontSize: 18, fontWeight: 600 }}> ريال</span>
           </div>
           {remaining < 0 && (
             <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 8 }}>
-              ⚠️ المصروف يتجاوز الراتب بـ {formatAmount(Math.abs(remaining))} ريال
+              ⚠️ المصروف يتجاوز الراتب بـ <span className="num">{formatAmount(Math.abs(remaining))}</span> ريال
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 12 }}>
@@ -183,7 +183,7 @@ function Section({ title, icon, total, totalColor, children }) {
           <span style={{ fontWeight: 700 }}>{title}</span>
         </div>
         <span style={{ color: totalColor, fontWeight: 800, fontSize: 15 }}>
-          {formatAmount(total)} ريال
+          <span className="num">{formatAmount(total)}</span> ريال
         </span>
       </div>
       {children}
@@ -194,7 +194,9 @@ function Section({ title, icon, total, totalColor, children }) {
 function SummaryRow({ label, value, color }) {
   return (
     <div style={{ textAlign: 'center' }}>
-      <div style={{ color, fontWeight: 800, fontSize: 15 }}>{formatAmount(value)}</div>
+      <div style={{ color, fontWeight: 800, fontSize: 15 }}>
+        <span className="num">{formatAmount(value)}</span>
+      </div>
       <div style={{ color: 'var(--text2)', fontSize: 11 }}>{label}</div>
     </div>
   );
