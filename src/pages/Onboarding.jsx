@@ -48,10 +48,10 @@ export default function Onboarding() {
   const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)', padding: '0 0 40px' }}>
+    <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)', padding: '0 0 60px' }}>
       {/* Progress */}
       <div style={{ padding: '52px 24px 24px' }}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 32 }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
           {[1, 2, 3].map(s => (
             <div key={s} style={{
               flex: 1, height: 4, borderRadius: 2,
@@ -64,15 +64,14 @@ export default function Onboarding() {
         {/* STEP 1 */}
         {step === 1 && (
           <div className="anim-fadeup">
-            <div style={{ textAlign: 'center', marginBottom: 28 }}>
-              <img src="/assets/icons/app-icon.png" alt="راتبي" style={{ width: 88, height: 88, borderRadius: 20, marginBottom: 14 }} />
-              <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 6 }}>تحكم في مالك،</h1>
-              <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--accent)', marginBottom: 8 }}>وحقق أهدافك.</h1>
-              <p style={{ color: 'var(--text2)', fontSize: 14 }}>ابدأ بإدخال راتبك الشهري</p>
-              <img src="/assets/icons/illus-welcome.png" alt="" style={{ width: '100%', maxWidth: 260, marginTop: 16 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+              <img src="/assets/icons/app-icon.png" alt="راتبي" style={{ width: 72, height: 72, borderRadius: 16, flexShrink: 0 }} />
+              <img src="/assets/icons/illus-welcome.png" alt="" style={{ flex: 1, maxHeight: 80, objectFit: 'contain' }} />
             </div>
+            <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 4 }}>تحكم في مالك، <span style={{ color: 'var(--accent)' }}>وحقق أهدافك.</span></h1>
+            <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 20 }}>ابدأ بإدخال راتبك الشهري</p>
             <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 700, marginBottom: 8 }}>الخطوة ١ من ٣</div>
-            <h2 style={{ fontSize: 20, fontWeight: 900, marginBottom: 20 }}>راتبك الشهري</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 900, marginBottom: 16 }}>راتبك الشهري</h2>
 
             <div className="input-group" style={{ marginBottom: 20 }}>
               <label className="input-label">المبلغ (ريال)</label>

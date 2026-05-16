@@ -38,14 +38,14 @@ export default function SalaryDay() {
   const remainingColor = remaining >= 0 ? 'var(--accent)' : 'var(--danger)';
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)' }}>
+    <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #1A1650 0%, #13103A 100%)',
         padding: '52px 20px 24px', textAlign: 'center',
         borderBottom: '1px solid var(--border)',
       }}>
-        <img src="/assets/icons/illus-salary.png" alt="" style={{ width: 160, marginBottom: 4 }} />
+        <img src="/assets/icons/illus-salary.png" alt="" style={{ width: 110, marginBottom: 4 }} />
         <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>يوم الراتب</h1>
         <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 20 }}>راجع توزيع راتبك قبل ما يتطير</p>
         <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -65,7 +65,7 @@ export default function SalaryDay() {
         </div>
       </div>
 
-      <div style={{ padding: '20px 16px 120px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ padding: '20px 16px 50px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* Commitments */}
         <Section title="التزاماتك" icon="📋" total={commitmentsTotal} totalColor="var(--danger)">

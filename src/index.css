@@ -66,7 +66,7 @@ html, body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 90px;
+  padding-bottom: 130px;
   -webkit-overflow-scrolling: touch;
 }
 .page::-webkit-scrollbar { display: none; }
@@ -104,10 +104,10 @@ html, body {
 }
 .input:focus { border-color: var(--primary); }
 .input::placeholder { color: var(--text3); }
-.input[type="number"], .input[inputmode="numeric"] { direction: ltr; text-align: center; font-family: 'Mestika', 'Cairo', sans-serif; }
+.input[type="number"], .input[inputmode="numeric"] { direction: ltr; text-align: center; font-family: 'Cairo', sans-serif; }
 
-/* Force numbers to render LTR to avoid bidi issues */
-.num { display: inline-block; direction: ltr; unicode-bidi: embed; font-variant-numeric: tabular-nums; font-family: 'Cairo', sans-serif; }
+/* Force numbers to render LTR with Cairo (Mestika has no digit glyphs) */
+.num { display: inline-block; direction: ltr; unicode-bidi: embed; font-family: 'Cairo', sans-serif; color: inherit; }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -146,7 +146,7 @@ html, body {
 .badge-purple { background: var(--primary-dim); color: var(--primary); }
 
 .fab {
-  position: fixed; bottom: 90px; left: 20px;
+  position: fixed; bottom: 86px; right: 20px;
   width: 56px; height: 56px; border-radius: 50%;
   background: var(--primary); color: #fff;
   display: flex; align-items: center; justify-content: center;
