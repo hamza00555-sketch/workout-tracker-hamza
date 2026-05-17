@@ -19,13 +19,11 @@ export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, u
     return Notification.permission
   })
   const [importing, setImporting] = useState(false)
-  const [importingPlan, setImportingPlan] = useState(false)
   const [promptCopied, setPromptCopied] = useState(false)
   const [pasteMode, setPasteMode] = useState(false)
-  const [pasteText, setPasteText] = useState('')
   const [pasteError, setPasteError] = useState('')
   const importRef = useRef(null)
-  const planImportRef = useRef(null)
+  const pasteRef = useRef(null)
 
   const update = (key, val) => {
     onUpdateProfile({ ...profile, [key]: val })
@@ -80,25 +78,32 @@ export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, u
   const handlePastePlan = () => {
     setPasteError('')
     try {
-      // Try to extract JSON from text (AI sometimes wraps it in markdown code blocks)
-      let text = pasteText.trim()
+      let text = (pasteRef.current?.value || '').trim()
+      if (!text) { setPasteError('الخانة فارغة — الصق الـ JSON أولاً'); return }
+
+      // Strip invisible Unicode characters that break JSON.parse
+      text = text.replace(/[\uFEFF\u200B\u200C\u200D\u200E\u200F\u00AD\u2060]/g, '')
+
+      // Extract from markdown code blocks if present
       const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/)
       if (jsonMatch) text = jsonMatch[1].trim()
+
       // Find first { and last }
       const start = text.indexOf('{')
       const end = text.lastIndexOf('}')
-      if (start !== -1 && end !== -1) text = text.slice(start, end + 1)
+      if (start === -1 || end === -1) { setPasteError('لم يتم العثور على JSON — تأكد من النص'); return }
+      text = text.slice(start, end + 1)
 
       const data = JSON.parse(text)
       if (!data.weeklySchedule || !Array.isArray(data.weeklySchedule)) {
-        setPasteError('الـ JSON لا يحتوي على weeklySchedule — تأكد من الـ prompt')
+        setPasteError('الـ JSON لا يحتوي على weeklySchedule — تأكد من البرومت')
         return
       }
       onImportPlan(data)
       setPasteMode(false)
-      setPasteText('')
-    } catch {
-      setPasteError('تعذّر قراءة الـ JSON — الصق النص كما أعطاك إياه الـ AI')
+      if (pasteRef.current) pasteRef.current.value = ''
+    } catch (err) {
+      setPasteError(`خطأ في قراءة الـ JSON: ${err.message || 'تأكد من النص'}`)
     }
   }
 
@@ -323,39 +328,37 @@ export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, u
             {pasteMode ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <textarea
-                  value={pasteText}
-                  onChange={e => { setPasteText(e.target.value); setPasteError('') }}
+                  ref={pasteRef}
                   placeholder='الصق هنا الـ JSON الذي أعطاك إياه الـ AI...'
                   rows={7}
+                  onInput={() => { if (pasteError) setPasteError('') }}
                   style={{
                     width: '100%', background: 'var(--bg3)',
                     border: `1px solid ${pasteError ? 'var(--red)' : 'var(--border2)'}`,
                     borderRadius: 10, padding: '10px 12px',
                     color: 'var(--text)', fontFamily: 'monospace', fontSize: 12,
                     outline: 'none', resize: 'none', direction: 'ltr', textAlign: 'left',
-                    boxSizing: 'border-box',
+                    boxSizing: 'border-box', WebkitUserSelect: 'text', userSelect: 'text',
                   }}
                 />
                 {pasteError && (
-                  <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--red)' }}>
+                  <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--red)', lineHeight: 1.5 }}>
                     ⚠️ {pasteError}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     onClick={handlePastePlan}
-                    disabled={!pasteText.trim()}
                     style={{
                       flex: 1, padding: '12px',
                       background: 'var(--purple)', border: 'none',
                       borderRadius: 10, color: 'white',
                       fontFamily: 'var(--font-ar)', fontWeight: 700, fontSize: 14,
-                      cursor: pasteText.trim() ? 'pointer' : 'not-allowed',
-                      opacity: pasteText.trim() ? 1 : 0.5,
+                      cursor: 'pointer',
                     }}
                   >استيراد الخطة</button>
                   <button
-                    onClick={() => { setPasteMode(false); setPasteText(''); setPasteError('') }}
+                    onClick={() => { setPasteMode(false); setPasteError(''); if (pasteRef.current) pasteRef.current.value = '' }}
                     style={{
                       padding: '12px 16px', background: 'var(--bg3)',
                       border: '1px solid var(--border2)', borderRadius: 10,
