@@ -146,15 +146,15 @@ export default function Dashboard() {
                   {/* Distribution bar */}
                   <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', gap: 2 }}>
                     {income.distribution.debtsPct > 0 && <div style={{ flex: income.distribution.debtsPct, background: '#FF6B6B', borderRadius: 3 }} />}
-                    {income.distribution.goalsPct > 0 && <div style={{ flex: income.distribution.goalsPct, background: '#A78BFA', borderRadius: 3 }} />}
+                    {(income.distribution.taggedPct || income.distribution.goalsPct || 0) > 0 && <div style={{ flex: income.distribution.taggedPct || income.distribution.goalsPct, background: '#F59E0B', borderRadius: 3 }} />}
                     {income.distribution.personalPct > 0 && <div style={{ flex: income.distribution.personalPct, background: '#00C9A7', borderRadius: 3 }} />}
                   </div>
                   <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
                     {income.distribution.debts > 0 && (
                       <div style={{ fontSize: 10, color: '#FF6B6B' }}>🏦 <span className="num">{fmt(income.distribution.debts)}</span></div>
                     )}
-                    {income.distribution.goals > 0 && (
-                      <div style={{ fontSize: 10, color: '#A78BFA' }}>🎯 <span className="num">{fmt(income.distribution.goals)}</span></div>
+                    {(income.distribution.tagged || income.distribution.goals || 0) > 0 && (
+                      <div style={{ fontSize: 10, color: '#F59E0B' }}>🏷️ <span className="num">{fmt(income.distribution.tagged || income.distribution.goals)}</span></div>
                     )}
                     {income.distribution.personal > 0 && (
                       <div style={{ fontSize: 10, color: '#00C9A7' }}>🛍️ <span className="num">{fmt(income.distribution.personal)}</span></div>

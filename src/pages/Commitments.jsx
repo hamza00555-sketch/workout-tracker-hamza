@@ -5,7 +5,7 @@ import { getCatData, COMMITMENT_CATEGORIES } from '../components/CategoryData.js
 import BottomSheet from '../components/BottomSheet.jsx';
 import CatIcon from '../components/CategoryIcons.jsx';
 
-const EMPTY_FORM = { name: '', amount: '', category: 'rent', dayOfMonth: 1, bankId: null, accountId: null };
+const EMPTY_FORM = { name: '', amount: '', category: 'rent', dayOfMonth: 1, bankId: null, accountId: null, extraIncomeTag: false };
 
 export default function Commitments() {
   const { commitments, banks, addCommitment, updateCommitment, deleteCommitment, fmt } = useApp();
@@ -37,6 +37,7 @@ export default function Commitments() {
     setForm({
       name: c.name, amount: String(c.amount), category: c.category,
       dayOfMonth: c.dayOfMonth || 1, bankId: c.bankId || null, accountId: c.accountId || null,
+      extraIncomeTag: !!c.extraIncomeTag,
     });
     setSheet(true);
   }
@@ -115,6 +116,9 @@ export default function Commitments() {
                     </div>
                     <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
                       <span className={`badge ${badge.cls}`}>{badge.label}</span>
+                      {c.extraIncomeTag && (
+                        <span style={{ fontSize: 11, padding: '2px 7px', borderRadius: 6, background: '#F59E0B18', color: '#F59E0B', fontWeight: 700 }}>💰 دخل إضافي</span>
+                      )}
                       {assignedBank && (
                         <span style={{
                           fontSize: 11, padding: '2px 7px', borderRadius: 6,
@@ -255,6 +259,26 @@ export default function Commitments() {
               )}
             </div>
           )}
+
+          {/* Extra Income Tag */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>💰 ضمّن في الدخل الإضافي</div>
+              <div style={{ color: 'var(--text3)', fontSize: 11, marginTop: 2 }}>يُخصَّص له جزء عند توزيع أي دخل إضافي</div>
+            </div>
+            <button onClick={() => setForm(p => ({ ...p, extraIncomeTag: !p.extraIncomeTag }))} style={{
+              background: form.extraIncomeTag ? '#F59E0B' : 'var(--border)',
+              border: 'none', borderRadius: 20, width: 48, height: 26, cursor: 'pointer',
+              position: 'relative', transition: 'background .25s', flexShrink: 0,
+            }}>
+              <div style={{
+                width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 3,
+                right: form.extraIncomeTag ? 4 : 'auto', left: form.extraIncomeTag ? 'auto' : 4,
+                transition: 'all .25s', boxShadow: '0 1px 3px rgba(0,0,0,.3)',
+              }} />
+            </button>
+          </div>
 
           <div style={{ display: 'flex', gap: 10, paddingBottom: 8 }}>
             {editItem && (

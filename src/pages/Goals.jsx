@@ -7,7 +7,7 @@ import SavingsCalc from './SavingsCalc.jsx';
 import CatIcon from '../components/CategoryIcons.jsx';
 
 const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const EMPTY_FORM = { name: '', targetAmount: '', targetDate: (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().slice(0,7) + '-01'; })(), category: 'travel', monthlyContribution: '', bankId: null, accountId: null };
+const EMPTY_FORM = { name: '', targetAmount: '', targetDate: (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().slice(0,7) + '-01'; })(), category: 'travel', monthlyContribution: '', bankId: null, accountId: null, extraIncomeTag: false };
 
 export default function Goals() {
   const { goals, banks, addGoal, updateGoal, deleteGoal, addGoalAmount, fmt } = useApp();
@@ -33,6 +33,7 @@ export default function Goals() {
       name: g.name, targetAmount: String(g.targetAmount), targetDate: g.targetDate,
       category: g.category, monthlyContribution: String(g.monthlyContribution || ''),
       bankId: g.bankId || null, accountId: g.accountId || null,
+      extraIncomeTag: !!g.extraIncomeTag,
     });
     setSheet(true);
   }
@@ -220,6 +221,26 @@ export default function Goals() {
             </div>
           )}
 
+          {/* Extra Income Tag */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>💰 ضمّن في الدخل الإضافي</div>
+              <div style={{ color: 'var(--text3)', fontSize: 11, marginTop: 2 }}>يُخصَّص له جزء عند توزيع أي دخل إضافي</div>
+            </div>
+            <button onClick={() => setForm(p => ({ ...p, extraIncomeTag: !p.extraIncomeTag }))} style={{
+              background: form.extraIncomeTag ? '#F59E0B' : 'var(--border)',
+              border: 'none', borderRadius: 20, width: 48, height: 26, cursor: 'pointer',
+              position: 'relative', transition: 'background .25s', flexShrink: 0,
+            }}>
+              <div style={{
+                width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 3,
+                right: form.extraIncomeTag ? 4 : 'auto', left: form.extraIncomeTag ? 'auto' : 4,
+                transition: 'all .25s', boxShadow: '0 1px 3px rgba(0,0,0,.3)',
+              }} />
+            </button>
+          </div>
+
           <div style={{ display: 'flex', gap: 10, paddingBottom: 8 }}>
             {editItem && (
               <button className="btn btn-danger" style={{ flex: 1 }}
@@ -280,16 +301,16 @@ function GoalCard({ goal, banks, onEdit, onClick, onAdd, completed }) {
           <div style={{ color: 'var(--text2)', fontSize: 12, marginTop: 2 }}>
             <span className="num">{fmt(goal.savedAmount || 0)}</span> / <span className="num">{fmt(goal.targetAmount)}</span> ريال
           </div>
-          {assignedBank && (
-            <div style={{ marginTop: 4 }}>
-              <span style={{
-                fontSize: 11, padding: '2px 7px', borderRadius: 6,
-                background: `${assignedBank.color}18`, color: assignedBank.color, fontWeight: 600,
-              }}>
+          <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+            {goal.extraIncomeTag && (
+              <span style={{ fontSize: 11, padding: '2px 7px', borderRadius: 6, background: '#F59E0B18', color: '#F59E0B', fontWeight: 700 }}>💰 دخل إضافي</span>
+            )}
+            {assignedBank && (
+              <span style={{ fontSize: 11, padding: '2px 7px', borderRadius: 6, background: `${assignedBank.color}18`, color: assignedBank.color, fontWeight: 600 }}>
                 {assignedBank.emoji} {assignedAccount ? assignedAccount.name : assignedBank.name}
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <div style={{ textAlign: 'left' }}>
           <div style={{ fontSize: 22, fontWeight: 900, color: completed ? 'var(--accent)' : 'var(--primary)' }}>

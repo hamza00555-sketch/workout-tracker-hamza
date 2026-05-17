@@ -16,79 +16,71 @@ export default function ExtraIncomeSheet({ onClose }) {
   const [amount, setAmount] = useState('');
   const [source, setSource] = useState('bonus');
   const [debtPct, setDebtPct] = useState(0);
-  const [goalsPct, setGoalsPct] = useState(0);
+  const [taggedPct, setTaggedPct] = useState(0);
   const [showDebtForm, setShowDebtForm] = useState(false);
   const [newDebtName, setNewDebtName] = useState('');
   const [newDebtAmount, setNewDebtAmount] = useState('');
   const [saving, setSaving] = useState(false);
 
   const activeDebts = debts.filter(d => !d.paid);
-  const activeCommitments = commitments.filter(c => c.active !== false);
-  const activeGoals = goals.filter(g => !g.completed);
+  // Only tagged items receive a portion from extra income
+  const taggedCommitments = commitments.filter(c => c.active !== false && c.extraIncomeTag);
+  const taggedGoals = goals.filter(g => !g.completed && g.extraIncomeTag);
+  const taggedItems = [...taggedCommitments.map(c => ({ ...c, _type: 'commitment', _amount: c.amount || 0 })),
+                       ...taggedGoals.map(g => ({ ...g, _type: 'goal', _amount: g.monthlyContribution || 0 }))];
+
+  const hasDebts = activeDebts.length > 0;
+  const hasTagged = taggedItems.length > 0;
 
   // Smart init based on what the user has
   useEffect(() => {
-    if (activeDebts.length > 0) {
-      setDebtPct(50); setGoalsPct(30);
-    } else if (activeCommitments.length > 0) {
-      setDebtPct(30); setGoalsPct(40);
-    } else {
-      setDebtPct(0); setGoalsPct(60);
-    }
+    if (hasDebts && hasTagged) { setDebtPct(40); setTaggedPct(40); }
+    else if (hasDebts) { setDebtPct(60); setTaggedPct(0); }
+    else if (hasTagged) { setDebtPct(0); setTaggedPct(60); }
+    else { setDebtPct(0); setTaggedPct(0); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const totalAmount = parseFloat(amount) || 0;
-  const pp = Math.max(0, 100 - debtPct - goalsPct);
+  const pp = Math.max(0, 100 - debtPct - taggedPct);
   const debtAmount = Math.round(totalAmount * debtPct / 100);
-  const goalsAmount = Math.round(totalAmount * goalsPct / 100);
-  const personalAmount = totalAmount - debtAmount - goalsAmount;
+  const taggedAmount = Math.round(totalAmount * taggedPct / 100);
+  const personalAmount = totalAmount - debtAmount - taggedAmount;
 
   function adjustDebt(delta) {
-    setDebtPct(prev => Math.max(0, Math.min(prev + delta, 80 - goalsPct)));
+    setDebtPct(prev => Math.max(0, Math.min(prev + delta, 80 - taggedPct)));
   }
-  function adjustGoals(delta) {
-    setGoalsPct(prev => Math.max(0, Math.min(prev + delta, 80 - debtPct)));
+  function adjustTagged(delta) {
+    setTaggedPct(prev => Math.max(0, Math.min(prev + delta, 80 - debtPct)));
   }
 
-  // Distribute debt portion: standalone debts first, then commitments buffer
+  // Distribute debt portion proportionally among standalone debts by remaining amount
   const debtBreakdown = useMemo(() => {
-    if (debtAmount <= 0) return [];
-    if (activeDebts.length > 0) {
-      const totalRem = activeDebts.reduce((s, d) => s + Math.max(0, (d.totalAmount || 0) - (d.paidAmount || 0)), 0);
-      if (totalRem <= 0) return [];
-      let rem = debtAmount;
-      return activeDebts.map((d, i) => {
-        const dRem = Math.max(0, (d.totalAmount || 0) - (d.paidAmount || 0));
-        const share = i === activeDebts.length - 1 ? rem : Math.round(debtAmount * dRem / totalRem);
-        rem -= share;
-        return { id: d.id, name: d.name, amount: share };
-      }).filter(x => x.amount > 0);
-    }
-    // No standalone debts — buffer across commitments
-    const total = activeCommitments.reduce((s, c) => s + (c.amount || 0), 0);
-    if (total <= 0) return [];
+    if (debtAmount <= 0 || activeDebts.length === 0) return [];
+    const totalRem = activeDebts.reduce((s, d) => s + Math.max(0, (d.totalAmount || 0) - (d.paidAmount || 0)), 0);
+    if (totalRem <= 0) return [];
     let rem = debtAmount;
-    return activeCommitments.map((c, i) => {
-      const share = i === activeCommitments.length - 1 ? rem : Math.round(debtAmount * (c.amount || 0) / total);
+    return activeDebts.map((d, i) => {
+      const dRem = Math.max(0, (d.totalAmount || 0) - (d.paidAmount || 0));
+      const share = i === activeDebts.length - 1 ? rem : Math.round(debtAmount * dRem / totalRem);
       rem -= share;
-      return { id: c.id, name: c.name, amount: share };
+      return { id: d.id, name: d.name, amount: share };
     }).filter(x => x.amount > 0);
-  }, [debtAmount, activeDebts, activeCommitments]);
+  }, [debtAmount, activeDebts]);
 
-  // Distribute goals portion proportionally by monthly contribution
-  const goalsBreakdown = useMemo(() => {
-    if (goalsAmount <= 0 || activeGoals.length === 0) return [];
-    const total = activeGoals.reduce((s, g) => s + (g.monthlyContribution || 0), 0);
-    const base = total > 0 ? total : activeGoals.length;
-    let rem = goalsAmount;
-    return activeGoals.map((g, i) => {
-      const share = i === activeGoals.length - 1 ? rem
-        : Math.round(goalsAmount * (total > 0 ? (g.monthlyContribution || 0) : 1) / base);
+  // Distribute tagged portion proportionally among tagged items by their amount
+  const taggedBreakdown = useMemo(() => {
+    if (taggedAmount <= 0 || taggedItems.length === 0) return [];
+    const total = taggedItems.reduce((s, t) => s + t._amount, 0);
+    const base = total > 0 ? total : taggedItems.length;
+    let rem = taggedAmount;
+    return taggedItems.map((t, i) => {
+      const share = i === taggedItems.length - 1 ? rem
+        : Math.round(taggedAmount * (total > 0 ? t._amount : 1) / base);
       rem -= share;
-      return { id: g.id, name: g.name, amount: share };
+      return { id: t.id, name: t.name, amount: share, type: t._type };
     }).filter(x => x.amount > 0);
-  }, [goalsAmount, activeGoals]);
+  }, [taggedAmount, taggedItems]);
 
   async function handleAddDebt() {
     const name = newDebtName.trim();
@@ -96,7 +88,7 @@ export default function ExtraIncomeSheet({ onClose }) {
     if (!name || !amt) return;
     await addDebt({ name, totalAmount: amt, paidAmount: 0, paid: false });
     setNewDebtName(''); setNewDebtAmount(''); setShowDebtForm(false);
-    if (debtPct < 30) { setDebtPct(50); setGoalsPct(prev => Math.min(prev, 30)); }
+    if (debtPct === 0) { setDebtPct(40); setTaggedPct(prev => Math.min(prev, 40)); }
   }
 
   async function handleConfirm() {
@@ -104,18 +96,19 @@ export default function ExtraIncomeSheet({ onClose }) {
     setSaving(true);
     await addExtraIncome({
       id: uid(), date: todayISO(), amount: totalAmount, source,
-      distribution: { debts: debtAmount, goals: goalsAmount, personal: personalAmount, debtsPct: debtPct, goalsPct, personalPct: pp },
-      debtBreakdown, goalsBreakdown,
+      distribution: { debts: debtAmount, tagged: taggedAmount, personal: personalAmount, debtsPct: debtPct, taggedPct, personalPct: pp },
+      debtBreakdown, taggedBreakdown,
     });
     setSaving(false);
     onClose();
   }
 
+  const showDistribution = totalAmount > 0 && (hasDebts || hasTagged);
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.55)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ background: 'var(--bg)', borderRadius: '20px 20px 0 0', maxHeight: '92vh', overflowY: 'auto', paddingBottom: 40 }}>
-        {/* Handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
           <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--border)' }} />
         </div>
@@ -154,14 +147,12 @@ export default function ExtraIncomeSheet({ onClose }) {
           {/* Standalone debts */}
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>الديون المستقلة</div>
-              <button onClick={() => setShowDebtForm(v => !v)} style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: 'none', borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>+ إضافة دين</button>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>الديون المستقلة 🏦</div>
+              <button onClick={() => setShowDebtForm(v => !v)} style={{ background: 'var(--accent-dim)', color: 'var(--accent)', border: 'none', borderRadius: 8, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>+ إضافة</button>
             </div>
 
             {activeDebts.length === 0 && !showDebtForm && (
-              <div style={{ fontSize: 12, color: 'var(--text3)', padding: '6px 0 2px' }}>
-                لا يوجد ديون — نسبة الديون ستوزَّع كاحتياطي للالتزامات الشهرية
-              </div>
+              <div style={{ fontSize: 12, color: 'var(--text3)', padding: '4px 0' }}>لا يوجد ديون مستقلة</div>
             )}
 
             {activeDebts.map(d => (
@@ -178,7 +169,7 @@ export default function ExtraIncomeSheet({ onClose }) {
 
             {showDebtForm && (
               <div style={{ background: 'var(--card2)', borderRadius: 12, padding: 12, marginTop: 4 }}>
-                <input type="text" placeholder="اسم الدين (مثال: سلف أخي)" value={newDebtName}
+                <input type="text" placeholder="اسم الدين" value={newDebtName}
                   onChange={e => setNewDebtName(e.target.value)}
                   style={{ width: '100%', marginBottom: 8, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 10px', fontSize: 13, color: 'var(--text)', boxSizing: 'border-box' }} />
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -191,17 +182,43 @@ export default function ExtraIncomeSheet({ onClose }) {
             )}
           </div>
 
-          {/* Distribution — only show if amount is entered */}
-          {totalAmount > 0 && (
+          {/* Tagged items info */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>المخصص للدخل الإضافي 🏷️</div>
+            {taggedItems.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text3)', padding: '4px 0', lineHeight: 1.7 }}>
+                لا يوجد التزامات أو أهداف مخصصة — فعّل "ضمّن في الدخل الإضافي" من داخل أي التزام أو هدف
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {taggedItems.map(t => (
+                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#F59E0B10', border: '1px solid #F59E0B30', borderRadius: 10 }}>
+                    <span style={{ fontSize: 14 }}>{t._type === 'commitment' ? '📋' : '🎯'}</span>
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{t.name}</span>
+                    <span style={{ fontSize: 12, color: '#F59E0B', fontWeight: 700 }}>
+                      <span className="num">{fmt(t._amount)}</span> ريال
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Distribution */}
+          {showDistribution && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>توزيع المبلغ</div>
 
-              <DistRow label="الديون والالتزامات" icon="🏦" pct={debtPct} amount={debtAmount} color="#FF6B6B"
-                onDec={() => adjustDebt(-5)} onInc={() => adjustDebt(5)} fmt={fmt} />
-              <DistRow label="الأهداف" icon="🎯" pct={goalsPct} amount={goalsAmount} color="#A78BFA"
-                onDec={() => adjustGoals(-5)} onInc={() => adjustGoals(5)} fmt={fmt} />
+              {hasDebts && (
+                <DistRow label="الديون" icon="🏦" pct={debtPct} amount={debtAmount} color="#FF6B6B"
+                  onDec={() => adjustDebt(-5)} onInc={() => adjustDebt(5)} fmt={fmt} />
+              )}
+              {hasTagged && (
+                <DistRow label="المخصص" icon="🏷️" pct={taggedPct} amount={taggedAmount} color="#F59E0B"
+                  onDec={() => adjustTagged(-5)} onInc={() => adjustTagged(5)} fmt={fmt} />
+              )}
 
-              {/* Personal — read-only */}
+              {/* Personal — always shown, read-only */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--card2)', borderRadius: 12, marginBottom: 8 }}>
                 <span style={{ fontSize: 18 }}>🛍️</span>
                 <div style={{ flex: 1 }}>
@@ -218,13 +235,22 @@ export default function ExtraIncomeSheet({ onClose }) {
 
               {/* Breakdowns */}
               {debtBreakdown.length > 0 && (
-                <BreakdownCard
-                  title={activeDebts.length > 0 ? `الديون (${fmt(debtAmount)} ريال)` : `احتياطي الالتزامات (${fmt(debtAmount)} ريال)`}
-                  color="#FF6B6B" items={debtBreakdown} fmt={fmt} />
+                <BreakdownCard title={`الديون (${fmt(debtAmount)} ريال)`} color="#FF6B6B" items={debtBreakdown} fmt={fmt} />
               )}
-              {goalsBreakdown.length > 0 && (
-                <BreakdownCard title={`الأهداف (${fmt(goalsAmount)} ريال)`} color="#A78BFA" items={goalsBreakdown} fmt={fmt} />
+              {taggedBreakdown.length > 0 && (
+                <BreakdownCard title={`المخصص (${fmt(taggedAmount)} ريال)`} color="#F59E0B" items={taggedBreakdown} fmt={fmt} />
               )}
+            </div>
+          )}
+
+          {/* If no debts and no tagged — show only personal */}
+          {totalAmount > 0 && !hasDebts && !hasTagged && (
+            <div style={{ background: 'var(--card2)', borderRadius: 12, padding: '14px', marginBottom: 20, textAlign: 'center' }}>
+              <div style={{ fontSize: 22, marginBottom: 6 }}>🛍️</div>
+              <div style={{ fontWeight: 700, color: '#00C9A7', fontSize: 16 }}>
+                <span className="num">{fmt(totalAmount)}</span> ريال
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>كامل المبلغ للاستخدام الشخصي</div>
             </div>
           )}
 
