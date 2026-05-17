@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import Onboarding from './pages/Onboarding.jsx';
@@ -50,6 +51,15 @@ function AppRouter() {
 }
 
 export default function App() {
+  // Always-active SW update listener — reloads as soon as new SW takes control,
+  // regardless of whether the user pressed the update button or not.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const reload = () => window.location.reload();
+    navigator.serviceWorker.addEventListener('controllerchange', reload);
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', reload);
+  }, []);
+
   return (
     <AppProvider>
       <AppRouter />

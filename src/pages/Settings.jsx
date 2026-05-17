@@ -175,41 +175,22 @@ export default function Settings() {
     setUpdateStatus('checking');
     try {
       if (!('serviceWorker' in navigator)) { window.location.reload(); return; }
-
       const reg = await navigator.serviceWorker.getRegistration('/');
       if (!reg) { window.location.reload(); return; }
 
-      let reloaded = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!reloaded) { reloaded = true; window.location.reload(); }
-      }, { once: true });
-
+      // Ask the browser to fetch the SW file and compare.
+      // If a new SW is found it installs → self.skipWaiting activates it →
+      // clients.claim takes control → controllerchange fires →
+      // the always-active listener in App.jsx reloads the page automatically.
       await reg.update();
 
-      const activatePending = sw => {
+      if (reg.installing) {
+        // New SW is downloading/installing — App.jsx will reload when ready
         setUpdateStatus('updating');
-        sw.postMessage({ type: 'SKIP_WAITING' });
-      };
-
-      if (reg.waiting) {
-        activatePending(reg.waiting);
-      } else if (reg.installing) {
-        setUpdateStatus('updating');
-        const installing = reg.installing;
-        installing.addEventListener('statechange', function () {
-          if (installing.state === 'installed' && reg.waiting) activatePending(reg.waiting);
-          else if (installing.state === 'activating' || installing.state === 'activated') {
-            // skipWaiting already called (self.skipWaiting at top of sw.js)
-          }
-        });
       } else {
-        // No new SW found — wait briefly in case controllerchange fires from a fast-activating SW
-        setTimeout(() => {
-          if (!reloaded) {
-            setUpdateStatus('current');
-            setTimeout(() => setUpdateStatus('idle'), 3000);
-          }
-        }, 2500);
+        // No new version on the server
+        setUpdateStatus('current');
+        setTimeout(() => setUpdateStatus('idle'), 3000);
       }
     } catch {
       setUpdateStatus('error');
