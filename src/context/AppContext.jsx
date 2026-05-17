@@ -19,6 +19,8 @@ export function AppProvider({ children }) {
   const [goals, setGoals] = useState([]);
   const [banks, setBanks] = useState([]);
   const [monthlyRecords, setMonthlyRecords] = useState([]);
+  const [debts, setDebts] = useState([]);
+  const [extraIncome, setExtraIncome] = useState([]);
   const [page, setPage] = useState('loading');
   const [privacyMode, setPrivacyMode] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -26,12 +28,14 @@ export function AppProvider({ children }) {
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
-    const [s, c, g, b, mr] = await Promise.all([
+    const [s, c, g, b, mr, dbt, ei] = await Promise.all([
       db.getAllSettings(),
       db.getCommitments(),
       db.getGoals(),
       db.getBanks(),
       db.getMonthlyRecords(),
+      db.getDebts(),
+      db.getExtraIncome(),
     ]);
     const merged = { ...DEFAULT_SETTINGS, ...s };
     setSettings(merged);
@@ -39,6 +43,8 @@ export function AppProvider({ children }) {
     setGoals(g);
     setBanks(b);
     setMonthlyRecords(mr);
+    setDebts(dbt);
+    setExtraIncome(ei.sort((a, z) => z.date.localeCompare(a.date)));
 
     if (!merged.onboardingComplete) {
       setPage('onboarding');
@@ -116,6 +122,33 @@ export function AppProvider({ children }) {
     setGoals(prev => prev.map(g => g.id === id ? updated : g));
   }, [goals]);
 
+  const addDebt = useCallback(async (data) => {
+    const item = { id: uid(), paid: false, paidAmount: 0, ...data };
+    await db.saveDebt(item);
+    setDebts(prev => [...prev, item]);
+    return item;
+  }, []);
+
+  const updateDebt = useCallback(async (item) => {
+    await db.saveDebt(item);
+    setDebts(prev => prev.map(d => d.id === item.id ? item : d));
+  }, []);
+
+  const deleteDebt = useCallback(async (id) => {
+    await db.deleteDebt(id);
+    setDebts(prev => prev.filter(d => d.id !== id));
+  }, []);
+
+  const addExtraIncome = useCallback(async (data) => {
+    await db.saveExtraIncome(data);
+    setExtraIncome(prev => [data, ...prev]);
+  }, []);
+
+  const deleteExtraIncome = useCallback(async (id) => {
+    await db.deleteExtraIncome(id);
+    setExtraIncome(prev => prev.filter(e => e.id !== id));
+  }, []);
+
   const addBank = useCallback(async (data) => {
     const item = { id: uid(), ...data };
     await db.saveBank(item);
@@ -170,12 +203,15 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={{
       loading, settings, commitments, goals, banks, monthlyRecords,
+      debts, extraIncome,
       page, setPage, currentMonthRecord,
       privacyMode, togglePrivacy, fmt,
       locked, unlock,
       updateSettings, addCommitment, updateCommitment, deleteCommitment,
       addGoal, updateGoal, deleteGoal, addGoalAmount,
       addBank, updateBank, deleteBank,
+      addDebt, updateDebt, deleteDebt,
+      addExtraIncome, deleteExtraIncome,
       confirmSalaryDay,
     }}>
       {children}

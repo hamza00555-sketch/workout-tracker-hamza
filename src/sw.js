@@ -109,7 +109,23 @@ self.addEventListener('notificationclick', (event) => {
 
 function openIDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('ratebi-db', 2);
+    const req = indexedDB.open('ratebi-db', 3);
+    req.onupgradeneeded = e => {
+      const database = e.target.result;
+      const old = e.oldVersion;
+      if (old < 1) {
+        database.createObjectStore('settings', { keyPath: 'key' });
+        database.createObjectStore('commitments', { keyPath: 'id' });
+        database.createObjectStore('goals', { keyPath: 'id' });
+        database.createObjectStore('expenses', { keyPath: 'id' });
+        database.createObjectStore('monthlyRecords', { keyPath: 'month' });
+      }
+      if (old < 2) database.createObjectStore('banks', { keyPath: 'id' });
+      if (old < 3) {
+        database.createObjectStore('debts', { keyPath: 'id' });
+        database.createObjectStore('extraIncome', { keyPath: 'id' });
+      }
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });

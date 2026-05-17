@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 
 const DB_NAME = 'ratebi-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let _db;
 async function db() {
@@ -18,6 +18,10 @@ async function db() {
         }
         if (oldVersion < 2) {
           database.createObjectStore('banks', { keyPath: 'id' });
+        }
+        if (oldVersion < 3) {
+          database.createObjectStore('debts', { keyPath: 'id' });
+          database.createObjectStore('extraIncome', { keyPath: 'id' });
         }
       },
     });
@@ -59,18 +63,27 @@ export async function deleteBank(id) { await (await db()).delete('banks', id); }
 export async function getMonthlyRecords() { return (await db()).getAll('monthlyRecords'); }
 export async function saveMonthlyRecord(r) { await (await db()).put('monthlyRecords', r); }
 
+export async function getDebts() { return (await db()).getAll('debts'); }
+export async function saveDebt(d) { await (await db()).put('debts', d); }
+export async function deleteDebt(id) { await (await db()).delete('debts', id); }
+
+export async function getExtraIncome() { return (await db()).getAll('extraIncome'); }
+export async function saveExtraIncome(e) { await (await db()).put('extraIncome', e); }
+export async function deleteExtraIncome(id) { await (await db()).delete('extraIncome', id); }
+
 export async function exportAll() {
   const d = await db();
-  const [settings, commitments, goals, expenses, banks, monthlyRecords] = await Promise.all([
+  const [settings, commitments, goals, expenses, banks, monthlyRecords, debts, extraIncome] = await Promise.all([
     d.getAll('settings'), d.getAll('commitments'), d.getAll('goals'),
     d.getAll('expenses'), d.getAll('banks'), d.getAll('monthlyRecords'),
+    d.getAll('debts'), d.getAll('extraIncome'),
   ]);
-  return { settings, commitments, goals, expenses, banks, monthlyRecords, exportDate: new Date().toISOString() };
+  return { settings, commitments, goals, expenses, banks, monthlyRecords, debts, extraIncome, exportDate: new Date().toISOString() };
 }
 
 export async function importAll(data) {
   const d = await db();
-  const stores = ['settings', 'commitments', 'goals', 'expenses', 'banks', 'monthlyRecords'];
+  const stores = ['settings', 'commitments', 'goals', 'expenses', 'banks', 'monthlyRecords', 'debts', 'extraIncome'];
   const tx = d.transaction(stores, 'readwrite');
   for (const store of stores) await tx.objectStore(store).clear();
   for (const item of data.settings || []) await tx.objectStore('settings').put(item);
@@ -79,5 +92,7 @@ export async function importAll(data) {
   for (const item of data.expenses || []) await tx.objectStore('expenses').put(item);
   for (const item of data.banks || []) await tx.objectStore('banks').put(item);
   for (const item of data.monthlyRecords || []) await tx.objectStore('monthlyRecords').put(item);
+  for (const item of data.debts || []) await tx.objectStore('debts').put(item);
+  for (const item of data.extraIncome || []) await tx.objectStore('extraIncome').put(item);
   await tx.done;
 }

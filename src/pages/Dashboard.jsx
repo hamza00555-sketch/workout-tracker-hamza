@@ -1,13 +1,20 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
-import { currentMonth, currentMonthLabel, daysUntil } from '../utils/format.js';
+import { currentMonth, currentMonthLabel, daysUntil, formatDate } from '../utils/format.js';
 import { calcCommitmentsTotal, calcGoalsMonthlyTotal, calcGoalProgress } from '../utils/calc.js';
 import { getCatData, COMMITMENT_CATEGORIES, GOAL_CATEGORIES } from '../components/CategoryData.js';
 import DonutChart from '../components/DonutChart.jsx';
 import CatIcon from '../components/CategoryIcons.jsx';
+import ExtraIncomeSheet from './ExtraIncomeSheet.jsx';
+
+const SOURCE_LABELS = {
+  bonus: '🎁 مكافأة', freelance: '💻 عمل حر', gift: '🎀 هدية',
+  investment: '📈 استثمار', other: '💰 غيره',
+};
 
 export default function Dashboard() {
-  const { settings, commitments, goals, banks, currentMonthRecord, setPage, privacyMode, togglePrivacy, fmt } = useApp();
+  const { settings, commitments, goals, banks, extraIncome, currentMonthRecord, setPage, privacyMode, togglePrivacy, fmt, deleteExtraIncome } = useApp();
+  const [showIncomeSheet, setShowIncomeSheet] = useState(false);
 
   const record = currentMonthRecord;
   const salary = record?.salary || settings.salary || 0;
@@ -101,6 +108,62 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <StatCard label="التزامات الشهر" value={commitmentsTotal} suffix="ريال" color="var(--danger)" icon="📋" onClick={() => setPage('commitments')} />
           <StatCard label="أهداف الشهر" value={goalsTotal} suffix="ريال" color="#A78BFA" icon="🎯" onClick={() => setPage('goals')} />
+        </div>
+
+        {/* Extra Income */}
+        <div>
+          <div className="section-header">
+            <span className="section-title">الدخل الإضافي 💰</span>
+            <button className="section-action" onClick={() => setShowIncomeSheet(true)}>+ إضافة</button>
+          </div>
+
+          {extraIncome.length === 0 ? (
+            <button onClick={() => setShowIncomeSheet(true)} style={{
+              width: '100%', padding: '16px', borderRadius: 14, cursor: 'pointer',
+              background: 'var(--card2)', border: '1.5px dashed var(--border)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+            }}>
+              <div style={{ fontSize: 24 }}>➕</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>أضف دخلاً إضافياً</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>مكافأة، عمل حر، هدية… وزّعه بذكاء</div>
+            </button>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {extraIncome.slice(0, 3).map(income => (
+                <div key={income.id} className="card" style={{ padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>
+                        {SOURCE_LABELS[income.source] || '💰 دخل'} · {formatDate(income.date)}
+                      </div>
+                      <div style={{ fontSize: 19, fontWeight: 900, color: 'var(--accent)' }}>
+                        <span className="num">{fmt(income.amount)}</span>
+                        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text2)', marginRight: 4 }}>ريال</span>
+                      </div>
+                    </div>
+                    <button onClick={() => deleteExtraIncome(income.id)} style={{ background: 'var(--card2)', border: 'none', borderRadius: 8, width: 26, height: 26, cursor: 'pointer', fontSize: 12, color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                  </div>
+                  {/* Distribution bar */}
+                  <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', gap: 2 }}>
+                    {income.distribution.debtsPct > 0 && <div style={{ flex: income.distribution.debtsPct, background: '#FF6B6B', borderRadius: 3 }} />}
+                    {income.distribution.goalsPct > 0 && <div style={{ flex: income.distribution.goalsPct, background: '#A78BFA', borderRadius: 3 }} />}
+                    {income.distribution.personalPct > 0 && <div style={{ flex: income.distribution.personalPct, background: '#00C9A7', borderRadius: 3 }} />}
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+                    {income.distribution.debts > 0 && (
+                      <div style={{ fontSize: 10, color: '#FF6B6B' }}>🏦 <span className="num">{fmt(income.distribution.debts)}</span></div>
+                    )}
+                    {income.distribution.goals > 0 && (
+                      <div style={{ fontSize: 10, color: '#A78BFA' }}>🎯 <span className="num">{fmt(income.distribution.goals)}</span></div>
+                    )}
+                    {income.distribution.personal > 0 && (
+                      <div style={{ fontSize: 10, color: '#00C9A7' }}>🛍️ <span className="num">{fmt(income.distribution.personal)}</span></div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Bank Transfers Breakdown */}
@@ -259,6 +322,8 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {showIncomeSheet && <ExtraIncomeSheet onClose={() => setShowIncomeSheet(false)} />}
     </div>
   );
 }
