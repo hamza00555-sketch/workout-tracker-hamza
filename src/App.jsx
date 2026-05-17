@@ -2,10 +2,12 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   ls, calcStreak, buildExercise,
   levelFromXP, xpProgress, getTodayChallenges,
+  scheduleNotificationsForToday,
 } from './utils.js'
 import {
   GREETINGS, NAV_TABS, ACHIEVEMENTS,
   DAILY_CHALLENGE_POOL, WEEKLY_CHALLENGE_POOL, BOSS_CHALLENGES,
+  NOTIFICATION_MESSAGES, WORKOUT_TIME_HOURS,
 } from './constants.js'
 import { PersonIcon, TrophyIcon, FlagIcon, DumbbellIcon, HomeIcon, SettingsIcon } from './components/Icons.jsx'
 
@@ -78,6 +80,17 @@ export default function App() {
   useEffect(() => { ls.set('hf_unlocked', unlockedAchievements) }, [unlockedAchievements])
   useEffect(() => { ls.set('hf_challenges', challengeState) },     [challengeState])
   useEffect(() => { ls.set('hf_photos',    photos) },              [photos])
+
+  // ── Schedule daily notifications ─────────────────────────────
+  useEffect(() => {
+    if (ls.get('hf_notif_enabled', false)) {
+      scheduleNotificationsForToday(
+        profile?.workoutTime || 'المساء',
+        NOTIFICATION_MESSAGES,
+        WORKOUT_TIME_HOURS,
+      )
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Initialize / refresh challenge state ──────────────────────
   useEffect(() => {
@@ -337,6 +350,17 @@ export default function App() {
             sessions={sessions}
             xp={xp}
             unlockedAchievements={unlockedAchievements}
+            challengeState={challengeState}
+            photos={photos}
+            onImport={(data) => {
+              if (data.sessions !== undefined)           setSessions(data.sessions)
+              if (data.xp !== undefined)                 setXP(data.xp)
+              if (data.profile)                          setProfile(data.profile)
+              if (data.unlockedAchievements)             setUnlockedAchievements(data.unlockedAchievements)
+              if (data.challengeState)                   setChallengeState(data.challengeState)
+              if (data.photos)                           setPhotos(data.photos)
+              pushAlert('✅', 'تم استيراد البيانات بنجاح!')
+            }}
           />
         )}
         {tab === 'photos' && (

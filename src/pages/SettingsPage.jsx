@@ -1,14 +1,25 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Card, SectionTitle } from '../components/ui.jsx'
-import { TrashIcon, ExportIcon } from '../components/Icons.jsx'
-import { WEEK_DAYS_SHORT, GYM_TYPES } from '../constants.js'
+import { TrashIcon, ExportIcon, BellIcon } from '../components/Icons.jsx'
+import { WEEK_DAYS_SHORT, GYM_TYPES, WORKOUT_TIME_HOURS } from '../constants.js'
+import { requestNotifPermission, scheduleNotificationsForToday, exportAllData, importAllData } from '../utils.js'
+import { NOTIFICATION_MESSAGES } from '../constants.js'
 
 const WORKOUT_TIMES = ['الصباح', 'الظهيرة', 'المساء', 'الليل']
 
-export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, unlockedAchievements }) {
+export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, unlockedAchievements, challengeState, photos, onImport }) {
   const [confirmReset, setConfirmReset] = useState(false)
   const [saved, setSaved] = useState(false)
   const [nameInput, setNameInput] = useState(profile?.name || 'حمزة')
+  const [notifEnabled, setNotifEnabled] = useState(() => {
+    try { return localStorage.getItem('hf_notif_enabled') === 'true' } catch { return false }
+  })
+  const [notifStatus, setNotifStatus] = useState(() => {
+    if (!('Notification' in window)) return 'unsupported'
+    return Notification.permission
+  })
+  const [importing, setImporting] = useState(false)
+  const importRef = useRef(null)
 
   const update = (key, val) => {
     onUpdateProfile({ ...profile, [key]: val })
@@ -25,27 +36,50 @@ export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, u
   }
 
   const handleExport = () => {
-    const data = {
-      profile,
-      sessions,
-      xp,
-      unlockedAchievements,
-      exportDate: new Date().toISOString(),
-      version: '1.0',
+    exportAllData(sessions, xp, profile, unlockedAchievements, challengeState, photos)
+  }
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    try {
+      const data = await importAllData(file)
+      onImport(data)
+    } catch {
+      alert('فشل استيراد الملف — تأكد أنه ملف HamzaFit صالح')
+    } finally {
+      setImporting(false)
+      e.target.value = ''
     }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `hamzafit-backup-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+  }
+
+  const handleToggleNotifications = async () => {
+    if (notifEnabled) {
+      localStorage.setItem('hf_notif_enabled', 'false')
+      localStorage.removeItem('hf_notif_scheduled')
+      setNotifEnabled(false)
+      return
+    }
+    const status = await requestNotifPermission()
+    setNotifStatus(status)
+    if (status === 'granted') {
+      localStorage.setItem('hf_notif_enabled', 'true')
+      localStorage.removeItem('hf_notif_scheduled')
+      setNotifEnabled(true)
+      scheduleNotificationsForToday(profile?.workoutTime || 'المساء', NOTIFICATION_MESSAGES, WORKOUT_TIME_HOURS)
+    }
   }
 
   const handleReset = () => {
-    ['hf_sessions','hf_xp','hf_active','hf_profile','hf_unlocked','hf_challenges'].forEach(k => localStorage.removeItem(k))
+    ['hf_sessions','hf_xp','hf_active','hf_profile','hf_unlocked','hf_challenges','hf_photos'].forEach(k => localStorage.removeItem(k))
     window.location.reload()
   }
+
+  const workoutHourDisplay = (() => {
+    const h = WORKOUT_TIME_HOURS[profile?.workoutTime] ?? 17
+    return `${h}:00`
+  })()
 
   return (
     <div style={{ paddingBottom: 100 }}>
@@ -176,6 +210,72 @@ export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, u
           </Card>
         </div>
 
+        {/* ── Notifications ──────────────────────────────────── */}
+        <div style={{ marginBottom: 10 }}>
+          <SectionTitle>الإشعارات</SectionTitle>
+          <Card style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <BellIcon size={20} color="var(--cyan)" />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 700 }}>
+                  تفعيل الإشعارات
+                </div>
+                <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                  ٥ إشعارات يومية: تحفيز + نصائح + تذكير تمرين
+                </div>
+              </div>
+              <button
+                onClick={handleToggleNotifications}
+                disabled={notifStatus === 'unsupported'}
+                style={{
+                  width: 52, height: 30, borderRadius: 15, border: 'none',
+                  background: notifEnabled ? 'var(--cyan)' : 'var(--bg3)',
+                  cursor: notifStatus === 'unsupported' ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.2s', position: 'relative', flexShrink: 0,
+                }}
+              >
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%', background: 'white',
+                  position: 'absolute', top: 3, transition: 'left 0.2s',
+                  left: notifEnabled ? 25 : 3,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                }} />
+              </button>
+            </div>
+
+            {notifEnabled && (
+              <div style={{
+                background: 'var(--bg3)', borderRadius: 10, padding: '10px 14px',
+                fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', lineHeight: 2,
+              }}>
+                🌅 8:00 — رسالة صباحية<br/>
+                💡 12:30 — نصيحة تمرين<br/>
+                💧 15:30 — تذكير الماء<br/>
+                ⚔️ {workoutHourDisplay} — وقت التمرين<br/>
+                🌙 21:00 — مراجعة اليوم
+              </div>
+            )}
+
+            {notifStatus === 'denied' && (
+              <div style={{
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: 10, padding: '10px 14px',
+                fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--red)', lineHeight: 1.6,
+              }}>
+                ⚠️ الإشعارات محظورة — افتح إعدادات الجهاز وأعطِ التطبيق إذن الإشعارات.
+              </div>
+            )}
+
+            {notifStatus === 'unsupported' && (
+              <div style={{
+                fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)',
+              }}>
+                متصفحك لا يدعم الإشعارات — ثبّت التطبيق على الشاشة الرئيسية أولاً.
+              </div>
+            )}
+          </Card>
+        </div>
+
         {/* ── Data Management ─────────────────────────────────── */}
         <div style={{ marginBottom: 10 }}>
           <SectionTitle>إدارة البيانات</SectionTitle>
@@ -195,7 +295,39 @@ export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, u
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700 }}>تصدير البيانات</div>
                 <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
-                  حفظ كل بياناتك كملف JSON
+                  حفظ الجلسات والصور والإنجازات كملف JSON
+                </div>
+              </div>
+            </button>
+
+            <input
+              ref={importRef}
+              type="file"
+              accept=".json"
+              style={{ display: 'none' }}
+              onChange={handleImport}
+            />
+            <button
+              onClick={() => importRef.current?.click()}
+              disabled={importing}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: 'var(--bg3)', border: '1px solid var(--border2)',
+                borderRadius: 12, padding: '14px 16px',
+                color: 'var(--text)', cursor: 'pointer',
+                fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 600,
+                textAlign: 'right', opacity: importing ? 0.6 : 1,
+              }}
+            >
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700 }}>{importing ? 'جاري الاستيراد...' : 'استيراد البيانات'}</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                  استعادة بياناتك من ملف نسخة احتياطية
                 </div>
               </div>
             </button>

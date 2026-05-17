@@ -187,6 +187,82 @@ export const getTodayChallenges = (challengeState, dailyPool, weeklyPool, bossPo
   return { date: today, week: weekNum, dailyIds, weeklyIds, bossId }
 }
 
+// ── Notifications ─────────────────────────────────────────────
+const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)]
+
+export const requestNotifPermission = async () => {
+  if (!('Notification' in window)) return 'unsupported'
+  if (Notification.permission === 'granted') return 'granted'
+  if (Notification.permission === 'denied') return 'denied'
+  return await Notification.requestPermission()
+}
+
+export const scheduleNotificationsForToday = async (workoutTime, messages, workoutTimeHours) => {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return
+  const reg = await navigator.serviceWorker?.ready.catch(() => null)
+  if (!reg) return
+
+  const todayKey = new Date().toISOString().split('T')[0]
+  if (localStorage.getItem('hf_notif_scheduled') === todayKey) return
+  localStorage.setItem('hf_notif_scheduled', todayKey)
+
+  const workoutHour = workoutTimeHours[workoutTime] ?? 17
+  const schedule = [
+    { hour: 8,           min: 0,  type: 'morning'   },
+    { hour: 12,          min: 30, type: 'tip'        },
+    { hour: 15,          min: 30, type: 'hydration'  },
+    { hour: workoutHour, min: 0,  type: 'workout'    },
+    { hour: 21,          min: 0,  type: 'evening'    },
+  ]
+
+  const now = new Date()
+  schedule.forEach(({ hour, min, type }) => {
+    const target = new Date(); target.setHours(hour, min, 0, 0)
+    const delay = target - now
+    if (delay > 0 && delay < 86400000) {
+      setTimeout(async () => {
+        try {
+          const msg = pickRandom(messages[type])
+          await reg.showNotification(msg.title, {
+            body: msg.body,
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            dir: 'rtl', lang: 'ar',
+            tag: type,
+            vibrate: [100, 50, 100],
+          })
+        } catch {}
+      }, delay)
+    }
+  })
+}
+
+// ── Export / Import ───────────────────────────────────────────
+export const exportAllData = (sessions, xp, profile, unlockedAchievements, challengeState, photos) => {
+  const data = {
+    version: '2.0',
+    exportDate: new Date().toISOString(),
+    sessions, xp, profile, unlockedAchievements, challengeState, photos,
+  }
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `hamzafit-backup-${new Date().toISOString().split('T')[0]}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+export const importAllData = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try { resolve(JSON.parse(e.target.result)) }
+    catch { reject(new Error('ملف غير صالح')) }
+  }
+  reader.onerror = () => reject(new Error('خطأ في قراءة الملف'))
+  reader.readAsText(file)
+})
+
 // ── Audio beep ────────────────────────────────────────────────
 export const playBeep = (count = 3) => {
   try {
