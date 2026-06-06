@@ -417,6 +417,7 @@ export default function App() {
               if (data.unlockedAchievements)             setUnlockedAchievements(data.unlockedAchievements)
               if (data.challengeState)                   setChallengeState(data.challengeState)
               if (data.photos)                           setPhotos(data.photos)
+              if (data.plan)                             { setPlan(data.plan); setPlanIndex(data.planIndex ?? 0) }
               pushAlert('✅', 'تم استيراد البيانات بنجاح!')
             }}
           />

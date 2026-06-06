@@ -42,7 +42,7 @@ export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, u
   }
 
   const handleExport = () => {
-    exportAllData(sessions, xp, profile, unlockedAchievements, challengeState, photos)
+    exportAllData(sessions, xp, profile, unlockedAchievements, challengeState, photos, plan)
   }
 
   const handleImport = async (e) => {

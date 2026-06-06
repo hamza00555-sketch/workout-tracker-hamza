@@ -258,11 +258,11 @@ export const scheduleNotificationsForToday = async (workoutTime, messages, worko
 }
 
 // ── Export / Import ───────────────────────────────────────────
-export const exportAllData = (sessions, xp, profile, unlockedAchievements, challengeState, photos) => {
+export const exportAllData = (sessions, xp, profile, unlockedAchievements, challengeState, photos, plan, planIndex) => {
   const data = {
     version: '2.0',
     exportDate: new Date().toISOString(),
-    sessions, xp, profile, unlockedAchievements, challengeState, photos,
+    sessions, xp, profile, unlockedAchievements, challengeState, photos, plan, planIndex,
   }
   const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
