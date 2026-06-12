@@ -69,7 +69,7 @@ function Stepper({ onUp, onDown, disabled }) {
   )
 }
 
-export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRemoveSet, onRemove, onDoneSet, sessions }) {
+export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRemoveSet, onRemove, onDoneSet, sessions, swipeOffset = 0 }) {
   const [showInfo,  setShowInfo]  = useState(false)
   const [showPR,    setShowPR]    = useState(false)
   const [copied,    setCopied]    = useState(false)
@@ -124,6 +124,10 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
         borderRadius: 16,
         overflow: 'hidden',
         marginBottom: 12,
+        transform: `translateX(${swipeOffset * 0.4}px) rotateY(${swipeOffset * 0.025}deg) scale(${Math.max(0.97, 1 - Math.abs(swipeOffset) * 0.0005)})`,
+        transition: swipeOffset === 0 ? 'transform 0.3s ease' : 'none',
+        transformOrigin: 'center center',
+        willChange: 'transform',
       }}>
         {/* Color accent bar */}
         <div style={{ height: 2, background: color }} />

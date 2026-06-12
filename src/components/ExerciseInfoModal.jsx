@@ -7,7 +7,8 @@ export default function ExerciseInfoModal({ exercise, onClose }) {
   const emoji = group.emoji || '🏋️'
 
   const exDef = (group.exercises || []).find(e => e.name === exercise.name) || {}
-  const { videoUrl, animationUrl, tips } = exDef
+  const { videoUrl, animationUrl, gifUrl, tips } = exDef
+  const displayImg = animationUrl || gifUrl
 
   const ytId = videoUrl ? (() => {
     const m = videoUrl.match(/(?:v=|youtu\.be\/|shorts\/)([A-Za-z0-9_-]{11})/)
@@ -74,26 +75,30 @@ export default function ExerciseInfoModal({ exercise, onClose }) {
         {/* Scrollable body */}
         <div style={{ overflowY: 'auto', padding: '0 18px 40px', WebkitOverflowScrolling: 'touch' }}>
 
-          {/* Video / Animation */}
-          <div style={{
-            background: 'var(--bg3)', border: '1px solid var(--border)',
-            borderRadius: 14, overflow: 'hidden', marginBottom: 14,
-          }}>
-            {animationUrl ? (
-              <div style={{ position: 'relative', aspectRatio: '16/9' }}>
-                {animationUrl.match(/\.(mp4|webm)$/i) ? (
-                  <video
-                    src={animationUrl} autoPlay loop muted playsInline
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <img src={animationUrl} alt={exercise.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                )}
-              </div>
-            ) : ytId ? (
-              <a href={videoUrl} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', position: 'relative', textDecoration: 'none' }}>
+          {/* Exercise image (gif from free-exercise-db or animationUrl) */}
+          {displayImg && (
+            <div style={{
+              background: 'var(--bg3)', border: '1px solid var(--border)',
+              borderRadius: 14, overflow: 'hidden', marginBottom: 14,
+            }}>
+              {displayImg.match(/\.(mp4|webm)$/i) ? (
+                <video src={displayImg} autoPlay loop muted playsInline
+                  style={{ width: '100%', display: 'block' }} />
+              ) : (
+                <img src={displayImg} alt={exercise.name}
+                  style={{ width: '100%', display: 'block' }} />
+              )}
+            </div>
+          )}
+
+          {/* YouTube link */}
+          {ytId && (
+            <a href={videoUrl} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'block', position: 'relative', textDecoration: 'none', marginBottom: 14 }}>
+              <div style={{
+                background: 'var(--bg3)', border: '1px solid var(--border)',
+                borderRadius: 14, overflow: 'hidden', position: 'relative',
+              }}>
                 <img
                   src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
                   alt={exercise.name}
@@ -124,23 +129,9 @@ export default function ExerciseInfoModal({ exercise, onClose }) {
                   padding: '3px 8px', fontFamily: 'var(--font-ar)',
                   fontSize: 11, color: 'white',
                 }}>افتح على YouTube</div>
-              </a>
-            ) : (
-              <div style={{
-                aspectRatio: '16/9', display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center', gap: 10,
-              }}>
-                <div style={{ fontSize: 36 }}>🎬</div>
-                <div style={{
-                  fontFamily: 'var(--font-ar)', fontSize: 13,
-                  color: 'var(--text3)', textAlign: 'center', lineHeight: 1.6,
-                }}>
-                  لا يوجد فيديو بعد<br/>
-                  <span style={{ fontSize: 11 }}>سيُضاف لاحقاً</span>
-                </div>
               </div>
-            )}
-          </div>
+            </a>
+          )}
 
           {/* Tips */}
           {tips && tips.length > 0 && (
@@ -195,18 +186,6 @@ export default function ExerciseInfoModal({ exercise, onClose }) {
             </div>
           </div>
 
-          {/* Coming soon notice */}
-          {!animationUrl && (
-            <div style={{
-              background: 'rgba(155,92,255,0.06)', border: '1px solid rgba(155,92,255,0.20)',
-              borderRadius: 10, padding: '10px 14px',
-              fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)',
-              lineHeight: 1.6,
-            }}>
-              <span style={{ color: 'var(--purple)', fontWeight: 700 }}>🎨 قادماً: </span>
-              سيُستبدل بأنيميشن مخصص للتمرين
-            </div>
-          )}
         </div>
       </div>
     </div>

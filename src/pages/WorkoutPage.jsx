@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSwipeable } from 'react-swipeable'
 import { EmptyState, Card, Badge, SectionTitle } from '../components/ui.jsx'
 import ExerciseCard from '../components/ExerciseCard.jsx'
 import AddExerciseModal from '../components/AddExerciseModal.jsx'
@@ -10,6 +11,8 @@ export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish
   const [showAdd,      setShowAdd]      = useState(false)
   const [showRoutines, setShowRoutines] = useState(false)
   const [elapsed,      setElapsed]      = useState(0)
+  const [cardIndex,    setCardIndex]    = useState(0)
+  const [dragOffset,   setDragOffset]   = useState(0)
   const timerRef = useRef(null)
 
   useEffect(() => {
@@ -80,6 +83,22 @@ export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish
   const doneSets  = allSets.filter(s => s.done).length
   const totalSets = allSets.length
   const pct = totalSets > 0 ? (doneSets / totalSets) * 100 : 0
+
+  // Keep cardIndex in bounds when exercises are added/removed
+  useEffect(() => {
+    setCardIndex(i => Math.min(i, Math.max(0, exercises.length - 1)))
+  }, [exercises.length])
+
+  const swipeHandlers = useSwipeable({
+    onSwiping:             ({ deltaX }) => setDragOffset(deltaX),
+    onSwipedLeft:          () => { setCardIndex(i => Math.min(i + 1, exercises.length - 1)); setDragOffset(0) },
+    onSwipedRight:         () => { setCardIndex(i => Math.max(i - 1, 0)); setDragOffset(0) },
+    onTouchEndOrOnMouseUp: () => setDragOffset(0),
+    trackMouse: true,
+    delta: 20,
+  })
+
+  const curEx = exercises[cardIndex]
 
   return (
     <div style={{ paddingBottom: 120 }}>
@@ -166,19 +185,45 @@ export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish
         </div>
       )}
 
-      {/* Exercise cards */}
-      {exercises.map(ex => (
-        <ExerciseCard
-          key={ex.id}
-          exercise={ex}
-          sessions={sessions || []}
-          onUpdateSet={(si, field, val) => handleUpdateSet(ex.id, si, field, val)}
-          onDoneSet={(si, done) => handleDoneSet(ex.id, si, done)}
-          onAddSet={() => handleAddSet(ex.id)}
-          onRemoveSet={si => handleRemoveSet(ex.id, si)}
-          onRemove={() => handleRemoveEx(ex.id)}
-        />
-      ))}
+      {/* Swipeable exercise card */}
+      {curEx && (
+        <div {...swipeHandlers} style={{ overflow: 'hidden', touchAction: 'pan-y' }}>
+          <ExerciseCard
+            key={curEx.id}
+            exercise={curEx}
+            sessions={sessions || []}
+            swipeOffset={dragOffset}
+            onUpdateSet={(si, field, val) => handleUpdateSet(curEx.id, si, field, val)}
+            onDoneSet={(si, done) => handleDoneSet(curEx.id, si, done)}
+            onAddSet={() => handleAddSet(curEx.id)}
+            onRemoveSet={si => handleRemoveSet(curEx.id, si)}
+            onRemove={() => handleRemoveEx(curEx.id)}
+          />
+        </div>
+      )}
+
+      {/* Navigation dots */}
+      {exercises.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, margin: '4px 0 12px' }}>
+          {exercises.map((ex, i) => {
+            const done = ex.sets.length > 0 && ex.sets.every(s => s.done)
+            return (
+              <div
+                key={i}
+                onClick={() => setCardIndex(i)}
+                style={{
+                  height: 8,
+                  width: i === cardIndex ? 24 : 8,
+                  borderRadius: 4,
+                  background: done ? 'var(--green)' : i === cardIndex ? 'var(--cyan)' : 'var(--border2)',
+                  transition: 'all 0.25s',
+                  cursor: 'pointer',
+                }}
+              />
+            )
+          })}
+        </div>
+      )}
 
       {/* Add exercise button */}
       <button
