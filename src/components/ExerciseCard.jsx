@@ -92,6 +92,8 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
   const ytUrl  = exDef.videoUrl ||
     `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' proper form')}`
 
+  const displayGif = animGif || exDef.gifUrl || null
+
   const handleCopy = () => {
     navigator.clipboard.writeText(ex.name).then(() => {
       setCopied(true)
@@ -234,7 +236,7 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
           </div>
 
           {/* Animated GIF preview */}
-          {animGif && (
+          {displayGif && (
             <div style={{ marginBottom: 10 }}>
               <div
                 onClick={() => setGifExpand(v => !v)}
@@ -249,7 +251,7 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
                 }}
               >
                 <img
-                  src={animGif}
+                  src={displayGif}
                   alt={ex.name}
                   style={{
                     width: '100%', height: '100%',
@@ -275,7 +277,7 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
                   fontFamily: 'var(--font-ar)', fontSize: 9, color: '#fff',
                   fontWeight: 700,
                 }}>
-                  طريقة الأداء
+                  {animGif ? 'طريقة الأداء' : 'صورة التمرين'}
                 </div>
               </div>
             </div>
