@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react'
 import { MUSCLE_GROUPS } from '../constants.js'
+import { getExerciseGif } from '../utils.js'
 
 export default function ExerciseInfoModal({ exercise, onClose }) {
   const group = MUSCLE_GROUPS[exercise.muscle] || {}
@@ -8,7 +10,13 @@ export default function ExerciseInfoModal({ exercise, onClose }) {
 
   const exDef = (group.exercises || []).find(e => e.name === exercise.name) || {}
   const { videoUrl, animationUrl, gifUrl, tips } = exDef
-  const displayImg = animationUrl || gifUrl
+
+  const [fetchedGif, setFetchedGif] = useState(null)
+  useEffect(() => {
+    getExerciseGif(exercise.name).then(url => setFetchedGif(url))
+  }, [exercise.name])
+
+  const displayImg = animationUrl || fetchedGif || gifUrl
 
   const ytId = videoUrl ? (() => {
     const m = videoUrl.match(/(?:v=|youtu\.be\/|shorts\/)([A-Za-z0-9_-]{11})/)

@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { MUSCLE_GROUPS } from '../constants.js'
 import { Badge } from './ui.jsx'
-import { getExerciseStats } from '../utils.js'
+import { getExerciseStats, getExerciseGif } from '../utils.js'
 import ExerciseInfoModal from './ExerciseInfoModal.jsx'
 
 // PR celebration overlay
@@ -73,6 +73,16 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
   const [showInfo,  setShowInfo]  = useState(false)
   const [showPR,    setShowPR]    = useState(false)
   const [copied,    setCopied]    = useState(false)
+  const [animGif,   setAnimGif]   = useState(null)
+  const [gifExpand, setGifExpand] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    getExerciseGif(ex.name).then(url => {
+      if (!cancelled) setAnimGif(url)
+    })
+    return () => { cancelled = true }
+  }, [ex.name])
 
   const group  = MUSCLE_GROUPS[ex.muscle] || {}
   const color  = group.color || 'var(--cyan)'
@@ -221,6 +231,54 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
               >×</button>
             </div>
           </div>
+
+          {/* Animated GIF preview */}
+          {animGif && (
+            <div style={{ marginBottom: 10 }}>
+              <div
+                onClick={() => setGifExpand(v => !v)}
+                style={{
+                  position: 'relative',
+                  height: gifExpand ? 220 : 110,
+                  borderRadius: 10, overflow: 'hidden',
+                  background: '#000',
+                  cursor: 'pointer',
+                  transition: 'height 0.3s ease',
+                  border: `1px solid ${color}30`,
+                }}
+              >
+                <img
+                  src={animGif}
+                  alt={ex.name}
+                  style={{
+                    width: '100%', height: '100%',
+                    objectFit: gifExpand ? 'contain' : 'cover',
+                    objectPosition: 'center top',
+                    display: 'block',
+                    transition: 'object-fit 0.3s',
+                  }}
+                />
+                <div style={{
+                  position: 'absolute', bottom: 5, left: 6,
+                  background: 'rgba(0,0,0,0.65)', borderRadius: 6,
+                  padding: '2px 7px',
+                  fontFamily: 'var(--font-mono)', fontSize: 9, color: '#fff',
+                  letterSpacing: 0.5,
+                }}>
+                  {gifExpand ? '▲ تصغير' : '▼ توسيع'}
+                </div>
+                <div style={{
+                  position: 'absolute', top: 5, right: 6,
+                  background: color + 'CC', borderRadius: 6,
+                  padding: '2px 7px',
+                  fontFamily: 'var(--font-ar)', fontSize: 9, color: '#fff',
+                  fontWeight: 700,
+                }}>
+                  طريقة الأداء
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Column headers: # | weight | ± | reps | ± | ✓ */}
           <div style={{
