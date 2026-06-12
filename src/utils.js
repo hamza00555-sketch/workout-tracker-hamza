@@ -283,6 +283,29 @@ export const importAllData = (file) => new Promise((resolve, reject) => {
   reader.readAsText(file)
 })
 
+// ── ExerciseDB GIF fetcher (RapidAPI) ────────────────────────
+const _gifCache = new Map()
+
+export const getExerciseGif = async (exerciseName) => {
+  const key = localStorage.getItem('hf_rapidapi_key')
+  if (!key) return null
+  if (_gifCache.has(exerciseName)) return _gifCache.get(exerciseName)
+  try {
+    const slug = encodeURIComponent(exerciseName.toLowerCase())
+    const res = await fetch(
+      `https://exercisedb.p.rapidapi.com/exercises/name/${slug}?limit=1`,
+      { headers: { 'x-rapidapi-key': key, 'x-rapidapi-host': 'exercisedb.p.rapidapi.com' } }
+    )
+    const data = await res.json()
+    const url = data?.[0]?.gifUrl ?? null
+    _gifCache.set(exerciseName, url)
+    return url
+  } catch {
+    _gifCache.set(exerciseName, null)
+    return null
+  }
+}
+
 // ── Audio beep ────────────────────────────────────────────────
 export const playBeep = (count = 3) => {
   try {

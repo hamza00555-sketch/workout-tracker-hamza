@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { MUSCLE_GROUPS } from '../constants.js'
+import { getExerciseGif } from '../utils.js'
 
 export default function ExerciseInfoModal({ exercise, onClose }) {
   useEffect(() => {
@@ -13,9 +14,16 @@ export default function ExerciseInfoModal({ exercise, onClose }) {
   const emoji = group.emoji || '🏋️'
 
   const exDef = (group.exercises || []).find(e => e.name === exercise.name) || {}
-  const videoUrl    = exDef.videoUrl ||
+  const { animationUrl, gifUrl, tips } = exDef
+  const videoUrl = exDef.videoUrl ||
     `https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + ' proper form')}`
-  const { animationUrl, tips } = exDef
+
+  const [fetchedGif, setFetchedGif] = useState(null)
+  useEffect(() => {
+    getExerciseGif(exercise.name).then(url => setFetchedGif(url))
+  }, [exercise.name])
+
+  const displayImg = animationUrl || fetchedGif || gifUrl
 
   const ytId = videoUrl ? (() => {
     const m = videoUrl.match(/(?:v=|youtu\.be\/|shorts\/)([A-Za-z0-9_-]{11})/)
@@ -83,7 +91,65 @@ export default function ExerciseInfoModal({ exercise, onClose }) {
         {/* Scrollable body */}
         <div style={{ overflowY: 'auto', padding: '0 18px 40px', WebkitOverflowScrolling: 'touch' }}>
 
-          {/* Tips — shown first */}
+          {/* Exercise image (gif from free-exercise-db or animationUrl) */}
+          {displayImg && (
+            <div style={{
+              background: 'var(--bg3)', border: '1px solid var(--border)',
+              borderRadius: 14, overflow: 'hidden', marginBottom: 14,
+            }}>
+              {displayImg.match(/\.(mp4|webm)$/i) ? (
+                <video src={displayImg} autoPlay loop muted playsInline
+                  style={{ width: '100%', display: 'block' }} />
+              ) : (
+                <img src={displayImg} alt={exercise.name}
+                  style={{ width: '100%', display: 'block' }} />
+              )}
+            </div>
+          )}
+
+          {/* YouTube link */}
+          {ytId && (
+            <a href={videoUrl} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'block', position: 'relative', textDecoration: 'none', marginBottom: 14 }}>
+              <div style={{
+                background: 'var(--bg3)', border: '1px solid var(--border)',
+                borderRadius: 14, overflow: 'hidden', position: 'relative',
+              }}>
+                <img
+                  src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+                  alt={exercise.name}
+                  style={{ width: '100%', display: 'block' }}
+                />
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'rgba(0,0,0,0.32)',
+                }}>
+                  <div style={{
+                    width: 56, height: 56, borderRadius: '50%',
+                    background: '#FF0000',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <div style={{
+                      width: 0, height: 0,
+                      borderTop: '11px solid transparent',
+                      borderBottom: '11px solid transparent',
+                      borderLeft: '18px solid white',
+                      marginRight: -3,
+                    }} />
+                  </div>
+                </div>
+                <div style={{
+                  position: 'absolute', bottom: 8, right: 8,
+                  background: 'rgba(0,0,0,0.7)', borderRadius: 6,
+                  padding: '3px 8px', fontFamily: 'var(--font-ar)',
+                  fontSize: 11, color: 'white',
+                }}>افتح على YouTube</div>
+              </div>
+            </a>
+          )}
+
+          {/* Tips */}
           {tips && tips.length > 0 && (
             <div style={{
               background: 'var(--bg3)', border: '1px solid var(--border2)',
@@ -172,18 +238,6 @@ export default function ExerciseInfoModal({ exercise, onClose }) {
             </div>
           </div>
 
-          {/* Coming soon notice */}
-          {!animationUrl && (
-            <div style={{
-              background: 'rgba(155,92,255,0.06)', border: '1px solid rgba(155,92,255,0.20)',
-              borderRadius: 10, padding: '10px 14px',
-              fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)',
-              lineHeight: 1.6,
-            }}>
-              <span style={{ color: 'var(--purple)', fontWeight: 700 }}>🎨 قادماً: </span>
-              سيُستبدل بأنيميشن مخصص للتمرين
-            </div>
-          )}
         </div>
       </div>
     </div>

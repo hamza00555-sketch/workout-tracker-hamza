@@ -11,6 +11,8 @@ export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, u
   const [confirmReset, setConfirmReset] = useState(false)
   const [saved, setSaved] = useState(false)
   const [nameInput, setNameInput] = useState(profile?.name || 'حمزة')
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('hf_rapidapi_key') || '')
+  const [apiKeySaved, setApiKeySaved] = useState(false)
   const [notifEnabled, setNotifEnabled] = useState(() => {
     try { return localStorage.getItem('hf_notif_enabled') === 'true' } catch { return false }
   })
@@ -560,6 +562,68 @@ export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, u
               }}>
                 متصفحك لا يدعم الإشعارات — ثبّت التطبيق على الشاشة الرئيسية أولاً.
               </div>
+            )}
+          </Card>
+        </div>
+
+        {/* ── ExerciseDB API Key ─────────────────────────────── */}
+        <div style={{ marginBottom: 10 }}>
+          <SectionTitle>مفتاح ExerciseDB (انيميشن التمارين)</SectionTitle>
+          <Card style={{ padding: 16 }}>
+            <div style={{
+              fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)',
+              marginBottom: 10, lineHeight: 1.6,
+            }}>
+              أدخل مفتاح RapidAPI لتفعيل الانيميشن المتحرك على كروت التمارين.
+              احصل على مفتاح مجاني من{' '}
+              <span style={{ color: 'var(--cyan)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                rapidapi.com/justin-WFnsXH_t6/api/exercisedb
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={e => setApiKey(e.target.value)}
+                placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                style={{
+                  flex: 1, background: 'var(--bg3)',
+                  border: `1px solid ${apiKey ? 'var(--cyan)55' : 'var(--border2)'}`,
+                  borderRadius: 10,
+                  padding: '11px 14px', color: 'var(--text)',
+                  fontFamily: 'var(--font-mono)', fontSize: 13, outline: 'none',
+                  letterSpacing: apiKey ? 3 : 0,
+                }}
+              />
+              <button
+                onClick={() => {
+                  localStorage.setItem('hf_rapidapi_key', apiKey.trim())
+                  setApiKeySaved(true)
+                  setTimeout(() => setApiKeySaved(false), 1800)
+                }}
+                style={{
+                  padding: '11px 16px',
+                  background: apiKeySaved ? 'var(--green-lo)' : 'var(--cyan-lo)',
+                  border: `1px solid ${apiKeySaved ? '#22C55E50' : 'var(--cyan)50'}`,
+                  borderRadius: 10,
+                  color: apiKeySaved ? 'var(--green)' : 'var(--cyan)',
+                  fontFamily: 'var(--font-ar)', fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0,
+                }}
+              >{apiKeySaved ? '✓ حُفظ' : 'حفظ'}</button>
+            </div>
+            {apiKey && (
+              <button
+                onClick={() => { setApiKey(''); localStorage.removeItem('hf_rapidapi_key') }}
+                style={{
+                  marginTop: 8, background: 'none', border: 'none',
+                  color: 'var(--text3)', fontSize: 12,
+                  fontFamily: 'var(--font-ar)', cursor: 'pointer',
+                  transition: 'color 0.15s',
+                }}
+                onMouseOver={e => e.currentTarget.style.color = 'var(--red)'}
+                onMouseOut={e => e.currentTarget.style.color = 'var(--text3)'}
+              >حذف المفتاح</button>
             )}
           </Card>
         </div>
