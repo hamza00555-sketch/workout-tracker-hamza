@@ -361,6 +361,7 @@ export default function App() {
             plan={plan}
             planIndex={planIndex}
             onUpdateActive={updateActive}
+            onStartWorkout={startWorkout}
             onFinish={finishSession}
             onShowRest={() => { setShowRest(true); setRestKey(k => k + 1) }}
             onStartPlannedWorkout={startPlannedWorkout}

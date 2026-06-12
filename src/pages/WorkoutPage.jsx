@@ -7,7 +7,7 @@ import RoutinesModal from '../components/RoutinesModal.jsx'
 import { buildExercise, blankSet, fmtDate, fmtDuration, sessionVolume } from '../utils.js'
 import { MUSCLE_GROUPS, ROUTINES } from '../constants.js'
 
-export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish, onShowRest, addXP, onGoBack, isResting }) {
+export default function WorkoutPage({ active, sessions, onUpdateActive, onStartWorkout, onFinish, onShowRest, addXP, onGoBack, isResting }) {
   const [showAdd,      setShowAdd]      = useState(false)
   const [showRoutines, setShowRoutines] = useState(false)
   const [elapsed,      setElapsed]      = useState(0)
@@ -36,8 +36,35 @@ export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish
   }, [active?.id, isResting])
 
   // ── History View ─────────────────────────────────────────────
+  // All hooks must be declared before any early return (Rules of Hooks)
+  const exercises = active ? (active.exercises || []) : []
+  const allSets   = exercises.flatMap(ex => ex.sets)
+  const doneSets  = allSets.filter(s => s.done).length
+  const totalSets = allSets.length
+  const pct = totalSets > 0 ? (doneSets / totalSets) * 100 : 0
+
+  useEffect(() => {
+    setCardIndex(i => Math.min(i, Math.max(0, exercises.length - 1)))
+  }, [exercises.length])
+
+  const swipeHandlers = useSwipeable({
+    onSwiping:             ({ deltaX }) => setDragOffset(deltaX),
+    onSwipedLeft:          () => { setCardIndex(i => Math.min(i + 1, exercises.length - 1)); setDragOffset(0) },
+    onSwipedRight:         () => { setCardIndex(i => Math.max(i - 1, 0)); setDragOffset(0) },
+    onTouchEndOrOnMouseUp: () => setDragOffset(0),
+    trackMouse: true,
+    delta: 20,
+  })
+
   if (!active) {
-    return <HistoryView sessions={sessions} onStartWorkout={() => setShowRoutines(true)} showRoutines={showRoutines} setShowRoutines={setShowRoutines} />
+    const handleStartWithRoutine = (routine) => {
+      const exs = routine.exercises.map(ex =>
+        buildExercise({ muscle: ex.muscle, name: ex.name, numSets: ex.defaultSets || 3 })
+      )
+      onStartWorkout(exs)
+      setShowRoutines(false)
+    }
+    return <HistoryView sessions={sessions} onStartWorkout={() => setShowRoutines(true)} showRoutines={showRoutines} setShowRoutines={setShowRoutines} onSelectRoutine={handleStartWithRoutine} />
   }
 
   // ── Helpers ──────────────────────────────────────────────────
@@ -83,32 +110,12 @@ export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish
   }
 
   const handleLoadRoutine = (routine) => {
-    const exercises = routine.exercises.map(ex =>
+    const exs = routine.exercises.map(ex =>
       buildExercise({ muscle: ex.muscle, name: ex.name, numSets: ex.defaultSets || 3 })
     )
-    onUpdateActive(prev => ({ ...prev, exercises }))
+    onUpdateActive(prev => ({ ...prev, exercises: exs }))
     setShowRoutines(false)
   }
-
-  const exercises = active.exercises || []
-  const allSets   = exercises.flatMap(ex => ex.sets)
-  const doneSets  = allSets.filter(s => s.done).length
-  const totalSets = allSets.length
-  const pct = totalSets > 0 ? (doneSets / totalSets) * 100 : 0
-
-  // Keep cardIndex in bounds when exercises are added/removed
-  useEffect(() => {
-    setCardIndex(i => Math.min(i, Math.max(0, exercises.length - 1)))
-  }, [exercises.length])
-
-  const swipeHandlers = useSwipeable({
-    onSwiping:             ({ deltaX }) => setDragOffset(deltaX),
-    onSwipedLeft:          () => { setCardIndex(i => Math.min(i + 1, exercises.length - 1)); setDragOffset(0) },
-    onSwipedRight:         () => { setCardIndex(i => Math.max(i - 1, 0)); setDragOffset(0) },
-    onTouchEndOrOnMouseUp: () => setDragOffset(0),
-    trackMouse: true,
-    delta: 20,
-  })
 
   const curEx = exercises[cardIndex]
 
@@ -286,7 +293,7 @@ export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish
 }
 
 // ── History sub-view ──────────────────────────────────────────
-function HistoryView({ sessions, onStartWorkout, showRoutines, setShowRoutines }) {
+function HistoryView({ sessions, onStartWorkout, showRoutines, setShowRoutines, onSelectRoutine }) {
   const [expanded, setExpanded] = useState(null)
 
   if (!sessions.length) {
@@ -304,7 +311,7 @@ function HistoryView({ sessions, onStartWorkout, showRoutines, setShowRoutines }
             ⚔️ ابدأ التمرين
           </button>
         </div>
-        {showRoutines && <RoutinesModal onSelect={() => {}} onClose={() => setShowRoutines(false)} />}
+        {showRoutines && <RoutinesModal onSelect={onSelectRoutine || (() => {})} onClose={() => setShowRoutines(false)} />}
       </div>
     )
   }
