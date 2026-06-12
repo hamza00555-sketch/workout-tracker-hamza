@@ -3,6 +3,71 @@ import { DumbbellIcon, FlameIcon } from '../components/Icons.jsx'
 import { xpProgress, getRank, getCommitmentLevel } from '../utils.js'
 import { MUSCLE_GROUPS, WEEK_DAYS_SHORT, COMMITMENT_LEVELS } from '../constants.js'
 
+function PlanDayCard({ day, dayNum, totalDays, onStart, onSkip }) {
+  return (
+    <Card style={{ padding: 18, marginBottom: 14, borderTop: '3px solid var(--purple)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--purple)', letterSpacing: 2, marginBottom: 4 }}>
+            PLAN · {dayNum}/{totalDays}
+          </div>
+          <div style={{ fontFamily: 'var(--font-ar)', fontSize: 17, fontWeight: 800 }}>{day.name}</div>
+        </div>
+        <div style={{
+          background: 'rgba(155,89,182,0.15)', border: '1px solid rgba(155,89,182,0.3)',
+          borderRadius: 20, padding: '3px 10px',
+          fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--purple)',
+        }}>{day.exercises.length} تمارين</div>
+      </div>
+
+      {/* Cycle indicator */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+        {Array.from({ length: totalDays }).map((_, i) => (
+          <div key={i} style={{
+            flex: 1, height: 3, borderRadius: 2,
+            background: i < (dayNum - 1) % totalDays || dayNum > totalDays
+              ? 'var(--purple)' : i === (dayNum - 1) % totalDays
+              ? 'var(--purple)' : 'var(--bg3)',
+            opacity: i === (dayNum - 1) % totalDays ? 1 : i < (dayNum - 1) % totalDays ? 0.5 : 0.2,
+          }} />
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 14 }}>
+        {day.exercises.map((ex, i) => (
+          <span key={i} style={{
+            background: 'var(--bg3)', border: '1px solid var(--border)',
+            borderRadius: 20, padding: '3px 10px',
+            fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text2)',
+          }}>{ex.name}{ex.sets ? ` ×${ex.sets}` : ''}</span>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          onClick={onStart}
+          style={{
+            flex: 1, padding: '12px',
+            background: 'linear-gradient(135deg, #9B59B6, #7D3C98)',
+            border: 'none', borderRadius: 12,
+            color: 'white', fontFamily: 'var(--font-ar)', fontWeight: 800, fontSize: 15,
+            cursor: 'pointer', boxShadow: '0 4px 16px rgba(155,89,182,0.35)',
+          }}
+        >⚔️ ابدأ</button>
+        <button
+          onClick={onSkip}
+          style={{
+            padding: '12px 16px',
+            background: 'var(--bg2)', border: '1px solid var(--border2)',
+            borderRadius: 12, color: 'var(--text3)',
+            fontFamily: 'var(--font-ar)', fontSize: 14, cursor: 'pointer',
+          }}
+        >⏭️ تخطي</button>
+      </div>
+    </Card>
+  )
+}
+
 // Hero illustration using custom artwork
 function HeroIllustration({ isTraining }) {
   return (
@@ -54,7 +119,7 @@ function CommitmentFlames({ streak }) {
   )
 }
 
-export default function HomePage({ sessions, xp, streak, profile, onStartWorkout, onGoToWorkout, active }) {
+export default function HomePage({ sessions, xp, streak, profile, onStartWorkout, onStartPlannedWorkout, onSkipPlanDay, onGoToWorkout, active, plan, planIndex }) {
   const { level, currentXP, neededXP, pct } = xpProgress(xp)
   const rank        = getRank(level)
   const today       = new Date().getDay()
@@ -76,6 +141,13 @@ export default function HomePage({ sessions, xp, streak, profile, onStartWorkout
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'صباح الخير' : hour < 17 ? 'مساء الخير' : 'مساء النور'
+
+  const schedule = plan?.weeklySchedule
+  const currentPlanDay = schedule?.length
+    ? schedule[(planIndex ?? 0) % schedule.length]
+    : null
+  const planDayNum   = schedule?.length ? ((planIndex ?? 0) % schedule.length) + 1 : 1
+  const planTotal    = schedule?.length ?? 1
 
   return (
     <div style={{ paddingBottom: 140 }}>
@@ -157,6 +229,17 @@ export default function HomePage({ sessions, xp, streak, profile, onStartWorkout
           {currentXP} / {neededXP} XP · {pct}%
         </div>
       </div>
+
+      {/* ── Plan Day Card ─────────────────────────────────────── */}
+      {currentPlanDay && !active && (
+        <PlanDayCard
+          day={currentPlanDay}
+          dayNum={planDayNum}
+          totalDays={planTotal}
+          onStart={() => onStartPlannedWorkout(currentPlanDay)}
+          onSkip={onSkipPlanDay}
+        />
+      )}
 
       {/* ── Today Card ────────────────────────────────────────── */}
       <Card

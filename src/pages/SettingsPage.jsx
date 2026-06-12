@@ -1,16 +1,33 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Card, SectionTitle } from '../components/ui.jsx'
-import { TrashIcon, ExportIcon } from '../components/Icons.jsx'
-import { WEEK_DAYS_SHORT, GYM_TYPES } from '../constants.js'
+import { TrashIcon, ExportIcon, BellIcon } from '../components/Icons.jsx'
+import { WEEK_DAYS_SHORT, GYM_TYPES, WORKOUT_TIME_HOURS, PLAN_TEMPLATE, AI_PLAN_PROMPT } from '../constants.js'
+import { requestNotifPermission, scheduleNotificationsForToday, exportAllData, importAllData } from '../utils.js'
+import { NOTIFICATION_MESSAGES } from '../constants.js'
 
 const WORKOUT_TIMES = ['الصباح', 'الظهيرة', 'المساء', 'الليل']
 
-export default function SettingsPage({ profile, onUpdateProfile, onClose, sessions, xp, unlockedAchievements }) {
+export default function SettingsPage({ profile, onUpdateProfile, sessions, xp, unlockedAchievements, challengeState, photos, onImport, plan, onImportPlan, onClearPlan }) {
   const [confirmReset, setConfirmReset] = useState(false)
   const [saved, setSaved] = useState(false)
   const [nameInput, setNameInput] = useState(profile?.name || 'حمزة')
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('hf_rapidapi_key') || '')
   const [apiKeySaved, setApiKeySaved] = useState(false)
+  const [notifEnabled, setNotifEnabled] = useState(() => {
+    try { return localStorage.getItem('hf_notif_enabled') === 'true' } catch { return false }
+  })
+  const [notifStatus, setNotifStatus] = useState(() => {
+    if (!('Notification' in window)) return 'unsupported'
+    return Notification.permission
+  })
+  const [importing, setImporting] = useState(false)
+  const [importingPlan, setImportingPlan] = useState(false)
+  const [promptCopied, setPromptCopied] = useState(false)
+  const [pasteMode, setPasteMode] = useState(false)
+  const [pasteError, setPasteError] = useState('')
+  const importRef = useRef(null)
+  const planImportRef = useRef(null)
+  const pasteRef = useRef(null)
 
   const update = (key, val) => {
     onUpdateProfile({ ...profile, [key]: val })
@@ -27,54 +44,166 @@ export default function SettingsPage({ profile, onUpdateProfile, onClose, sessio
   }
 
   const handleExport = () => {
-    const data = {
-      profile,
-      sessions,
-      xp,
-      unlockedAchievements,
-      exportDate: new Date().toISOString(),
-      version: '1.0',
+    exportAllData(sessions, xp, profile, unlockedAchievements, challengeState, photos, plan)
+  }
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    try {
+      const data = await importAllData(file)
+      onImport(data)
+    } catch {
+      alert('فشل استيراد الملف — تأكد أنه ملف HamzaFit صالح')
+    } finally {
+      setImporting(false)
+      e.target.value = ''
     }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `hamzafit-backup-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+  }
+
+  const handleToggleNotifications = async () => {
+    if (notifEnabled) {
+      localStorage.setItem('hf_notif_enabled', 'false')
+      localStorage.removeItem('hf_notif_scheduled')
+      setNotifEnabled(false)
+      return
+    }
+    const status = await requestNotifPermission()
+    setNotifStatus(status)
+    if (status === 'granted') {
+      localStorage.setItem('hf_notif_enabled', 'true')
+      localStorage.removeItem('hf_notif_scheduled')
+      setNotifEnabled(true)
+      scheduleNotificationsForToday(profile?.workoutTime || 'المساء', NOTIFICATION_MESSAGES, WORKOUT_TIME_HOURS)
+    }
+  }
+
+  const handlePastePlan = () => {
+    setPasteError('')
+    try {
+      let text = (pasteRef.current?.value || '').trim()
+      if (!text) { setPasteError('الخانة فارغة — الصق الـ JSON أولاً'); return }
+
+      // Strip invisible Unicode characters that break JSON.parse
+      text = text.replace(/[\uFEFF\u200B\u200C\u200D\u200E\u200F\u00AD\u2060]/g, '')
+      // Normalize curly/smart quotes to straight quotes (iOS/AI apps often substitute these)
+      text = text.replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+      text = text.replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+
+      // Extract from markdown code blocks if present
+      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+      if (jsonMatch) text = jsonMatch[1].trim()
+
+      // Find first { and last }
+      const start = text.indexOf('{')
+      const end = text.lastIndexOf('}')
+      if (start === -1 || end === -1) { setPasteError('لم يتم العثور على JSON — تأكد من النص'); return }
+      text = text.slice(start, end + 1)
+
+      const data = JSON.parse(text)
+      if (!data.weeklySchedule || !Array.isArray(data.weeklySchedule)) {
+        setPasteError('الـ JSON لا يحتوي على weeklySchedule — تأكد من البرومت')
+        return
+      }
+      onImportPlan(data)
+      setPasteMode(false)
+      if (pasteRef.current) pasteRef.current.value = ''
+    } catch (err) {
+      setPasteError(`خطأ في قراءة الـ JSON: ${err.message || 'تأكد من النص'}`)
+    }
+  }
+
+  const handleImportPlan = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImportingPlan(true)
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        let text = (ev.target.result || '').trim()
+        text = text.replace(/[﻿​‌‍‎‏­⁠]/g, '')
+        text = text.replace(/[‘’‚‛]/g, "'")
+        text = text.replace(/[“”„‟]/g, '"')
+        const data = JSON.parse(text)
+        if (!data.weeklySchedule || !Array.isArray(data.weeklySchedule)) {
+          alert('الملف لا يحتوي على خطة صالحة — تأكد من وجود weeklySchedule')
+          return
+        }
+        onImportPlan(data)
+      } catch (err) {
+        alert(`خطأ في قراءة الملف: ${err.message || 'تأكد من الملف'}`)
+      } finally {
+        setImportingPlan(false)
+        e.target.value = ''
+      }
+    }
+    reader.onerror = () => {
+      alert('فشل قراءة الملف')
+      setImportingPlan(false)
+      e.target.value = ''
+    }
+    reader.readAsText(file, 'UTF-8')
+  }
+
+  const handleClipboardPaste = async () => {
+    setPasteError('')
+    try {
+      const raw = await navigator.clipboard.readText()
+      if (!raw || !raw.trim()) { setPasteError('الحافظة فارغة — انسخ الـ JSON أولاً'); setPasteMode(true); return }
+      if (pasteRef.current) pasteRef.current.value = raw
+      // Reuse same parsing logic
+      let text = raw.trim()
+      text = text.replace(/[﻿​‌‍‎‏­⁠]/g, '')
+      text = text.replace(/[''‚‛]/g, "'")
+      text = text.replace(/[""„‟]/g, '"')
+      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+      if (jsonMatch) text = jsonMatch[1].trim()
+      const start = text.indexOf('{'); const end = text.lastIndexOf('}')
+      if (start === -1 || end === -1) { setPasteError('لم يتم العثور على JSON — تأكد من النص'); setPasteMode(true); return }
+      text = text.slice(start, end + 1)
+      const data = JSON.parse(text)
+      if (!data.weeklySchedule || !Array.isArray(data.weeklySchedule)) {
+        setPasteError('الـ JSON لا يحتوي على weeklySchedule'); setPasteMode(true); return
+      }
+      onImportPlan(data)
+    } catch (err) {
+      // If clipboard permission denied or API unsupported, fall back to manual paste
+      if (err.name === 'NotAllowedError' || err.name === 'SecurityError') {
+        setPasteMode(true)
+      } else {
+        setPasteError(`خطأ: ${err.message || 'تأكد من النص'}`)
+        setPasteMode(true)
+      }
+    }
+  }
+
+  const handleCopyPrompt = () => {
+    const template = JSON.stringify({ ...PLAN_TEMPLATE, startDate: new Date().toISOString().split('T')[0] }, null, 2)
+    const prompt = AI_PLAN_PROMPT.replace('TEMPLATE_PLACEHOLDER', template)
+    navigator.clipboard.writeText(prompt).then(() => {
+      setPromptCopied(true)
+      setTimeout(() => setPromptCopied(false), 2000)
+    })
   }
 
   const handleReset = () => {
-    ['hf_sessions','hf_xp','hf_active','hf_profile','hf_unlocked','hf_challenges'].forEach(k => localStorage.removeItem(k))
+    ['hf_sessions','hf_xp','hf_active','hf_profile','hf_unlocked','hf_challenges','hf_photos'].forEach(k => localStorage.removeItem(k))
     window.location.reload()
   }
 
+  const workoutHourDisplay = (() => {
+    const h = WORKOUT_TIME_HOURS[profile?.workoutTime] ?? 17
+    return `${h}:00`
+  })()
+
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
-      background: 'var(--bg)',
-      overflowY: 'auto',
-      paddingBottom: 40,
-    }}>
+    <div style={{ paddingBottom: 100 }}>
       {/* Header */}
-      <div style={{
-        background: 'var(--bg1)',
-        borderBottom: '1px solid var(--border)',
-        padding: 'calc(var(--safe-top) + 14px) 18px 14px',
-        position: 'sticky', top: 0, zIndex: 10,
-        backdropFilter: 'blur(16px)',
-        display: 'flex', alignItems: 'center', gap: 14,
-      }}>
-        <button onClick={onClose} style={{
-          background: 'var(--bg2)', border: '1px solid var(--border)',
-          borderRadius: 8, width: 36, height: 36,
-          color: 'var(--text2)', cursor: 'pointer', fontSize: 18,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>×</button>
-        <div style={{ fontFamily: 'var(--font-ar)', fontSize: 20, fontWeight: 800 }}>الإعدادات</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <div style={{ fontFamily: 'var(--font-ar)', fontSize: 22, fontWeight: 800 }}>الإعدادات</div>
         {saved && (
           <div style={{
-            marginRight: 'auto',
             fontFamily: 'var(--font-ar)', fontSize: 13,
             color: 'var(--green)', fontWeight: 700,
             animation: 'fadeIn 0.2s ease',
@@ -82,7 +211,7 @@ export default function SettingsPage({ profile, onUpdateProfile, onClose, sessio
         )}
       </div>
 
-      <div style={{ padding: '16px 14px', maxWidth: 560, margin: '0 auto' }}>
+      <div>
 
         {/* ── Player Name ─────────────────────────────────────── */}
         <div style={{ marginBottom: 10 }}>
@@ -98,6 +227,7 @@ export default function SettingsPage({ profile, onUpdateProfile, onClose, sessio
                   border: '1px solid var(--border2)', borderRadius: 10,
                   padding: '12px 14px', color: 'var(--text)',
                   fontFamily: 'var(--font-ar)', fontSize: 16, outline: 'none',
+                  direction: 'rtl', textAlign: 'right',
                 }}
               />
             </div>
@@ -196,6 +326,246 @@ export default function SettingsPage({ profile, onUpdateProfile, onClose, sessio
           </Card>
         </div>
 
+        {/* ── AI Workout Plan ────────────────────────────────── */}
+        <div style={{ marginBottom: 10 }}>
+          <SectionTitle>خطة التمرين الذكية</SectionTitle>
+          <Card style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {plan ? (
+              <div style={{
+                background: 'rgba(155,89,182,0.1)', border: '1px solid rgba(155,89,182,0.3)',
+                borderRadius: 12, padding: 14,
+              }}>
+                <div style={{ fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
+                  📋 {plan.planName}
+                </div>
+                <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', lineHeight: 1.7 }}>
+                  {plan.durationWeeks} أسبوع · {plan.weeklySchedule?.length} أيام/أسبوع<br/>
+                  يبدأ: {plan.startDate}
+                </div>
+                <button
+                  onClick={onClearPlan}
+                  style={{
+                    marginTop: 10, background: 'var(--red-lo)', border: '1px solid var(--red-md)',
+                    borderRadius: 8, padding: '6px 14px', color: 'var(--red)',
+                    fontFamily: 'var(--font-ar)', fontSize: 12, cursor: 'pointer',
+                  }}
+                >حذف الخطة</button>
+              </div>
+            ) : (
+              <div style={{ fontFamily: 'var(--font-ar)', fontSize: 13, color: 'var(--text3)', lineHeight: 1.7 }}>
+                أرسل الخطة لأي AI (ChatGPT، Claude، Gemini) واطلب منه ملء الهيكل، ثم استورده هنا.
+              </div>
+            )}
+
+            <button
+              onClick={handleCopyPrompt}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: promptCopied ? 'rgba(34,197,94,0.1)' : 'var(--bg3)',
+                border: `1px solid ${promptCopied ? 'var(--green)' : 'var(--border2)'}`,
+                borderRadius: 12, padding: '14px 16px',
+                color: promptCopied ? 'var(--green)' : 'var(--text)', cursor: 'pointer',
+                fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 600, textAlign: 'right',
+                transition: 'all 0.2s',
+              }}
+            >
+              <span style={{ fontSize: 20 }}>{promptCopied ? '✅' : '🤖'}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700 }}>{promptCopied ? 'تم النسخ!' : 'نسخ البرومت للـ AI'}</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                  الصق في ChatGPT أو Claude مع PDF/فيديو التمرين
+                </div>
+              </div>
+            </button>
+
+            {/* Clipboard API paste — works reliably in installed PWA */}
+            <button
+              onClick={handleClipboardPaste}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: 'rgba(155,89,182,0.12)', border: '1px solid rgba(155,89,182,0.4)',
+                borderRadius: 12, padding: '14px 16px',
+                color: 'var(--purple)', cursor: 'pointer',
+                fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 600,
+                textAlign: 'right', width: '100%',
+              }}
+            >
+              <span style={{ fontSize: 20 }}>📋</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700 }}>لصق الخطة من الحافظة</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                  انسخ الـ JSON من الـ AI ثم اضغط هنا
+                </div>
+              </div>
+            </button>
+
+            {/* Import plan from file — most reliable on PWA/iOS */}
+            <div>
+              <input
+                ref={planImportRef}
+                type="file"
+                accept=".json,application/json"
+                style={{ display: 'none' }}
+                onChange={handleImportPlan}
+              />
+              <button
+                onClick={() => planImportRef.current?.click()}
+                disabled={importingPlan}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: 'rgba(0,212,198,0.08)', border: '1px solid rgba(0,212,198,0.3)',
+                  borderRadius: 12, padding: '14px 16px',
+                  color: importingPlan ? 'var(--text3)' : 'var(--cyan)',
+                  cursor: importingPlan ? 'not-allowed' : 'pointer',
+                  fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 600,
+                  textAlign: 'right', width: '100%',
+                }}
+              >
+                <span style={{ fontSize: 20 }}>📂</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700 }}>{importingPlan ? 'جار الاستيراد...' : 'استيراد خطة من ملف'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                    احفظ JSON من الـ AI كملف ثم اختره هنا
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Paste JSON directly */}
+            {pasteMode ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <textarea
+                  ref={pasteRef}
+                  placeholder='الصق هنا الـ JSON الذي أعطاك إياه الـ AI...'
+                  rows={7}
+                  onInput={() => { if (pasteError) setPasteError('') }}
+                  style={{
+                    width: '100%', background: 'var(--bg3)',
+                    border: `1px solid ${pasteError ? 'var(--red)' : 'var(--border2)'}`,
+                    borderRadius: 10, padding: '10px 12px',
+                    color: 'var(--text)', fontFamily: 'monospace', fontSize: 12,
+                    outline: 'none', resize: 'none', direction: 'ltr', textAlign: 'left',
+                    boxSizing: 'border-box', WebkitUserSelect: 'text', userSelect: 'text',
+                  }}
+                />
+                {pasteError && (
+                  <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--red)', lineHeight: 1.5 }}>
+                    ⚠️ {pasteError}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={handlePastePlan}
+                    style={{
+                      flex: 1, padding: '12px',
+                      background: 'var(--purple)', border: 'none',
+                      borderRadius: 10, color: 'white',
+                      fontFamily: 'var(--font-ar)', fontWeight: 700, fontSize: 14,
+                      cursor: 'pointer',
+                    }}
+                  >استيراد الخطة</button>
+                  <button
+                    onClick={() => { setPasteMode(false); setPasteError(''); if (pasteRef.current) pasteRef.current.value = '' }}
+                    style={{
+                      padding: '12px 16px', background: 'var(--bg3)',
+                      border: '1px solid var(--border2)', borderRadius: 10,
+                      color: 'var(--text2)', fontFamily: 'var(--font-ar)', fontSize: 14,
+                      cursor: 'pointer',
+                    }}
+                  >إلغاء</button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setPasteMode(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: 'rgba(155,89,182,0.08)', border: '1px solid rgba(155,89,182,0.3)',
+                  borderRadius: 12, padding: '14px 16px',
+                  color: 'var(--purple)', cursor: 'pointer',
+                  fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 600, textAlign: 'right',
+                  width: '100%',
+                }}
+              >
+                <span style={{ fontSize: 20 }}>📋</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700 }}>لصق JSON من الـ AI</div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                    الصق النص الذي أعطاك إياه ChatGPT أو Claude
+                  </div>
+                </div>
+              </button>
+            )}
+          </Card>
+        </div>
+
+        {/* ── Notifications ──────────────────────────────────── */}
+        <div style={{ marginBottom: 10 }}>
+          <SectionTitle>الإشعارات</SectionTitle>
+          <Card style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <BellIcon size={20} color="var(--cyan)" />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 700 }}>
+                  تفعيل الإشعارات
+                </div>
+                <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                  ٥ إشعارات يومية: تحفيز + نصائح + تذكير تمرين
+                </div>
+              </div>
+              <button
+                onClick={handleToggleNotifications}
+                disabled={notifStatus === 'unsupported'}
+                style={{
+                  width: 52, height: 30, borderRadius: 15, border: 'none',
+                  background: notifEnabled ? 'var(--cyan)' : 'var(--bg3)',
+                  cursor: notifStatus === 'unsupported' ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.2s', position: 'relative', flexShrink: 0,
+                }}
+              >
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%', background: 'white',
+                  position: 'absolute', top: 3, transition: 'left 0.2s',
+                  left: notifEnabled ? 25 : 3,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                }} />
+              </button>
+            </div>
+
+            {notifEnabled && (
+              <div style={{
+                background: 'var(--bg3)', borderRadius: 10, padding: '10px 14px',
+                fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', lineHeight: 2,
+              }}>
+                🌅 8:00 — رسالة صباحية<br/>
+                💡 12:30 — نصيحة تمرين<br/>
+                💧 15:30 — تذكير الماء<br/>
+                ⚔️ {workoutHourDisplay} — وقت التمرين<br/>
+                🌙 21:00 — مراجعة اليوم
+              </div>
+            )}
+
+            {notifStatus === 'denied' && (
+              <div style={{
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: 10, padding: '10px 14px',
+                fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--red)', lineHeight: 1.6,
+              }}>
+                ⚠️ الإشعارات محظورة — افتح إعدادات الجهاز وأعطِ التطبيق إذن الإشعارات.
+              </div>
+            )}
+
+            {notifStatus === 'unsupported' && (
+              <div style={{
+                fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)',
+              }}>
+                متصفحك لا يدعم الإشعارات — ثبّت التطبيق على الشاشة الرئيسية أولاً.
+              </div>
+            )}
+          </Card>
+        </div>
+
         {/* ── ExerciseDB API Key ─────────────────────────────── */}
         <div style={{ marginBottom: 10 }}>
           <SectionTitle>مفتاح ExerciseDB (انيميشن التمارين)</SectionTitle>
@@ -277,7 +647,39 @@ export default function SettingsPage({ profile, onUpdateProfile, onClose, sessio
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700 }}>تصدير البيانات</div>
                 <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
-                  حفظ كل بياناتك كملف JSON
+                  حفظ الجلسات والصور والإنجازات كملف JSON
+                </div>
+              </div>
+            </button>
+
+            <input
+              ref={importRef}
+              type="file"
+              accept=".json"
+              style={{ display: 'none' }}
+              onChange={handleImport}
+            />
+            <button
+              onClick={() => importRef.current?.click()}
+              disabled={importing}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: 'var(--bg3)', border: '1px solid var(--border2)',
+                borderRadius: 12, padding: '14px 16px',
+                color: 'var(--text)', cursor: 'pointer',
+                fontFamily: 'var(--font-ar)', fontSize: 15, fontWeight: 600,
+                textAlign: 'right', opacity: importing ? 0.6 : 1,
+              }}
+            >
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700 }}>{importing ? 'جاري الاستيراد...' : 'استيراد البيانات'}</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                  استعادة بياناتك من ملف نسخة احتياطية
                 </div>
               </div>
             </button>

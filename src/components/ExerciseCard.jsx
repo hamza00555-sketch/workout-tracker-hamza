@@ -21,7 +21,7 @@ function PRFlash({ color }) {
       <div style={{
         background: color, borderRadius: 20,
         padding: '10px 24px',
-        fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 800,
+        fontFamily: 'var(--font-ar)', fontSize: 18, fontWeight: 800,
         color: '#fff',
         animation: 'prFlash 0.5s ease forwards',
         boxShadow: `0 0 32px ${color}80`,
@@ -89,7 +89,8 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
   const label  = group.label || ex.muscle
   const emoji  = group.emoji || '🏋️'
   const exDef  = (group.exercises || []).find(e => e.name === ex.name) || {}
-  const ytUrl  = exDef.videoUrl || null
+  const ytUrl  = exDef.videoUrl ||
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + ' proper form')}`
 
   const handleCopy = () => {
     navigator.clipboard.writeText(ex.name).then(() => {
@@ -196,7 +197,7 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
                 )}
 
                 {lastWeight !== null && (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)' }}>
+                  <span style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)' }}>
                     آخر <span style={{ color: 'var(--text2)', fontWeight: 700 }}>{lastWeight}kg</span>
                     {maxWeight !== null && maxWeight !== lastWeight && (
                       <> · أعلى <span style={{ color, fontWeight: 700 }}>{maxWeight}kg</span></>
@@ -288,7 +289,8 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
           }}>
             {['#', 'الوزن', '', 'التكرار', '', ''].map((h, i) => (
               <div key={i} style={{
-                fontFamily: 'var(--font-mono)', fontSize: 9,
+                fontFamily: (h === 'الوزن' || h === 'التكرار') ? 'var(--font-ar)' : 'var(--font-mono)',
+                fontSize: (h === 'الوزن' || h === 'التكرار') ? 11 : 10,
                 color: 'var(--text3)', textAlign: 'center',
               }}>{h}</div>
             ))}
@@ -395,7 +397,7 @@ export default function ExerciseCard({ exercise: ex, onUpdateSet, onAddSet, onRe
                 onClick={() => onRemoveSet(ex.sets.length - 1)}
                 style={{
                   background: 'none', border: 'none',
-                  color: 'var(--text3)', fontSize: 11,
+                  color: 'var(--text3)', fontSize: 12,
                   fontFamily: 'var(--font-ar)', cursor: 'pointer',
                   transition: 'color 0.15s',
                 }}

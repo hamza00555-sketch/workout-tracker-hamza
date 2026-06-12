@@ -3,13 +3,20 @@ import { MUSCLE_GROUPS } from '../constants.js'
 import { getExerciseGif } from '../utils.js'
 
 export default function ExerciseInfoModal({ exercise, onClose }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
   const group = MUSCLE_GROUPS[exercise.muscle] || {}
   const color = group.color || 'var(--cyan)'
   const label = group.label || exercise.muscle
   const emoji = group.emoji || '🏋️'
 
   const exDef = (group.exercises || []).find(e => e.name === exercise.name) || {}
-  const { videoUrl, animationUrl, gifUrl, tips } = exDef
+  const { animationUrl, gifUrl, tips } = exDef
+  const videoUrl = exDef.videoUrl ||
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + ' proper form')}`
 
   const [fetchedGif, setFetchedGif] = useState(null)
   useEffect(() => {
@@ -29,20 +36,21 @@ export default function ExerciseInfoModal({ exercise, onClose }) {
       style={{
         position: 'fixed', inset: 0, zIndex: 400,
         background: 'rgba(0,0,0,0.80)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
         backdropFilter: 'blur(6px)',
+        padding: '12px 16px',
+        overflowY: 'auto',
       }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '100%', maxWidth: 560,
+          width: '100%', maxWidth: 500,
           background: 'var(--bg2)',
-          borderRadius: '20px 20px 0 0',
+          borderRadius: 20,
           border: '1px solid var(--border)',
-          borderBottom: 'none',
           overflow: 'hidden',
-          maxHeight: '85vh',
+          maxHeight: '88vh',
           display: 'flex', flexDirection: 'column',
         }}
       >
@@ -173,6 +181,42 @@ export default function ExerciseInfoModal({ exercise, onClose }) {
                 </div>
               ))}
             </div>
+          )}
+
+          {/* Compact YouTube link */}
+          {(videoUrl || animationUrl) && (
+            <a
+              href={videoUrl || animationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: 'rgba(255,0,0,0.08)', border: '1px solid rgba(255,0,0,0.25)',
+                borderRadius: 12, padding: '12px 14px', marginBottom: 12,
+                textDecoration: 'none',
+              }}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: '50%', background: '#FF0000', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <div style={{
+                  width: 0, height: 0,
+                  borderTop: '7px solid transparent',
+                  borderBottom: '7px solid transparent',
+                  borderLeft: '12px solid white',
+                  marginRight: -2,
+                }} />
+              </div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-ar)', fontSize: 13, fontWeight: 700, color: '#FF4444', marginBottom: 2 }}>
+                  شاهد الشرح على YouTube
+                </div>
+                <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)' }}>
+                  {exercise.name}
+                </div>
+              </div>
+            </a>
           )}
 
           {/* Muscle group info */}

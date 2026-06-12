@@ -7,21 +7,33 @@ import RoutinesModal from '../components/RoutinesModal.jsx'
 import { buildExercise, blankSet, fmtDate, fmtDuration, sessionVolume } from '../utils.js'
 import { MUSCLE_GROUPS, ROUTINES } from '../constants.js'
 
-export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish, onShowRest, addXP }) {
+export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish, onShowRest, addXP, onGoBack, isResting }) {
   const [showAdd,      setShowAdd]      = useState(false)
   const [showRoutines, setShowRoutines] = useState(false)
   const [elapsed,      setElapsed]      = useState(0)
   const [cardIndex,    setCardIndex]    = useState(0)
   const [dragOffset,   setDragOffset]   = useState(0)
-  const timerRef = useRef(null)
+  const timerRef      = useRef(null)
+  const pausedMsRef   = useRef(0)
+  const pauseStartRef = useRef(null)
 
+  // pause timer when rest opens, resume when it closes
   useEffect(() => {
     if (!active) return
-    const tick = () => setElapsed(Math.round((Date.now() - active.id) / 60000))
-    tick()
-    timerRef.current = setInterval(tick, 10000)
+    if (isResting) {
+      clearInterval(timerRef.current)
+      pauseStartRef.current = Date.now()
+    } else {
+      if (pauseStartRef.current) {
+        pausedMsRef.current += Date.now() - pauseStartRef.current
+        pauseStartRef.current = null
+      }
+      const tick = () => setElapsed(Math.round((Date.now() - active.id - pausedMsRef.current) / 60000))
+      tick()
+      timerRef.current = setInterval(tick, 10000)
+    }
     return () => clearInterval(timerRef.current)
-  }, [active?.id])
+  }, [active?.id, isResting])
 
   // ── History View ─────────────────────────────────────────────
   if (!active) {
@@ -130,14 +142,14 @@ export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish
             }}
           >⏱️ راحة</button>
           <button
-            onClick={onFinish}
+            onClick={onGoBack}
             style={{
-              background: 'var(--green-lo)', border: '1px solid #22C55E50',
-              borderRadius: 10, padding: '8px 16px',
-              color: 'var(--green)', fontFamily: 'var(--font-ar)',
-              fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              background: 'var(--bg2)', border: '1px solid var(--border)',
+              borderRadius: 10, padding: '8px 14px',
+              color: 'var(--text2)', fontFamily: 'var(--font-ar)',
+              fontSize: 12, cursor: 'pointer',
             }}
-          >✓ إنهاء</button>
+          >← تراجع</button>
         </div>
       </div>
 
@@ -250,8 +262,18 @@ export default function WorkoutPage({ active, sessions, onUpdateActive, onFinish
         background: 'linear-gradient(transparent, var(--bg) 40%)',
         pointerEvents: 'none',
       }}>
-        <div style={{ pointerEvents: 'all' }}>
-          <button className="btn-cyan" onClick={onFinish}>
+        <div style={{ pointerEvents: 'all', display: 'flex', gap: 8 }}>
+          <button
+            onClick={onGoBack}
+            style={{
+              flex: '0 0 auto',
+              background: 'var(--bg2)', border: '1px solid var(--border)',
+              borderRadius: 14, padding: '14px 18px',
+              color: 'var(--text2)', fontFamily: 'var(--font-ar)',
+              fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            }}
+          >← تراجع</button>
+          <button className="btn-cyan" onClick={onFinish} style={{ flex: 1 }}>
             ✓ إنهاء الجلسة {doneSets > 0 ? `· ${doneSets} sets` : ''}
           </button>
         </div>
@@ -308,7 +330,7 @@ function HistoryView({ sessions, onStartWorkout, showRoutines, setShowRoutines }
                 <div style={{ fontFamily: 'var(--font-ar)', fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
                   {fmtDate(s.date)}
                 </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', marginBottom: 8 }}>
+                <div style={{ fontFamily: 'var(--font-ar)', fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
                   {fmtDuration(s.duration)}
                   {vol > 0 ? ` · ${(vol / 1000).toFixed(1)} طن` : ''}
                 </div>
@@ -327,7 +349,7 @@ function HistoryView({ sessions, onStartWorkout, showRoutines, setShowRoutines }
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: 'var(--cyan)' }}>
                   {doneSets}
                 </div>
-                <div style={{ fontSize: 9, color: 'var(--text3)', fontFamily: 'var(--font-ar)' }}>sets</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--font-mono)' }}>sets</div>
               </div>
             </div>
 

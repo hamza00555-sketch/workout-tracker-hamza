@@ -2,19 +2,23 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   ls, calcStreak, buildExercise,
   levelFromXP, xpProgress, getTodayChallenges,
+  scheduleNotificationsForToday,
 } from './utils.js'
 import {
   GREETINGS, NAV_TABS, ACHIEVEMENTS,
   DAILY_CHALLENGE_POOL, WEEKLY_CHALLENGE_POOL, BOSS_CHALLENGES,
+  NOTIFICATION_MESSAGES, WORKOUT_TIME_HOURS,
 } from './constants.js'
 import { PersonIcon, TrophyIcon, FlagIcon, DumbbellIcon, HomeIcon, SettingsIcon } from './components/Icons.jsx'
 
 const NAV_ICONS = {
-  profile:      PersonIcon,
-  achievements: TrophyIcon,
-  challenges:   FlagIcon,
-  workout:      DumbbellIcon,
   home:         HomeIcon,
+  workout:      DumbbellIcon,
+  exercises:    null,
+  challenges:   FlagIcon,
+  achievements: TrophyIcon,
+  profile:      PersonIcon,
+  settings:     SettingsIcon,
 }
 
 // Pages
@@ -23,7 +27,9 @@ import WorkoutPage     from './pages/WorkoutPage.jsx'
 import ChallengesPage  from './pages/ChallengesPage.jsx'
 import AchievementsPage from './pages/AchievementsPage.jsx'
 import ProfilePage     from './pages/ProfilePage.jsx'
-import SettingsPage   from './pages/SettingsPage.jsx'
+import SettingsPage    from './pages/SettingsPage.jsx'
+import PhotosPage      from './pages/PhotosPage.jsx'
+import ExercisesPage   from './pages/ExercisesPage.jsx'
 
 // Components
 import RestTimer        from './components/RestTimer.jsx'
@@ -57,14 +63,17 @@ export default function App() {
   const [profile,             setProfile]             = useState(() => ls.get('hf_profile', DEFAULT_PROFILE))
   const [unlockedAchievements,setUnlockedAchievements]= useState(() => ls.get('hf_unlocked', []))
   const [challengeState,      setChallengeState]      = useState(() => ls.get('hf_challenges', null))
+  const [plan,                setPlan]                = useState(() => ls.get('hf_plan', null))
+  const [planIndex,           setPlanIndex]           = useState(() => ls.get('hf_plan_index', 0))
 
   // ── UI state ──────────────────────────────────────────────────
-  const [tab,          setTab]          = useState('home')
-  const [showRest,     setShowRest]     = useState(false)
-  const [showLevelUp,  setShowLevelUp]  = useState(false)
-  const [levelUpNum,   setLevelUpNum]   = useState(1)
-  const [alerts,       setAlerts]       = useState([])
-  const [showSettings, setShowSettings] = useState(false)
+  const [tab,        setTab]        = useState('home')
+  const [showRest,   setShowRest]   = useState(false)
+  const [showLevelUp,setShowLevelUp]= useState(false)
+  const [levelUpNum, setLevelUpNum] = useState(1)
+  const [alerts,     setAlerts]     = useState([])
+  const [restKey,    setRestKey]    = useState(0)
+  const [photos,     setPhotos]     = useState(() => ls.get('hf_photos', []))
 
   const prevLevelRef = useRef(levelFromXP(xp))
 
@@ -75,6 +84,20 @@ export default function App() {
   useEffect(() => { ls.set('hf_profile',  profile)  },             [profile])
   useEffect(() => { ls.set('hf_unlocked', unlockedAchievements) }, [unlockedAchievements])
   useEffect(() => { ls.set('hf_challenges', challengeState) },     [challengeState])
+  useEffect(() => { ls.set('hf_plan',       plan)           },     [plan])
+  useEffect(() => { ls.set('hf_plan_index', planIndex)      },     [planIndex])
+  useEffect(() => { ls.set('hf_photos',    photos) },              [photos])
+
+  // ── Schedule daily notifications ─────────────────────────────
+  useEffect(() => {
+    if (ls.get('hf_notif_enabled', false)) {
+      scheduleNotificationsForToday(
+        profile?.workoutTime || 'المساء',
+        NOTIFICATION_MESSAGES,
+        WORKOUT_TIME_HOURS,
+      )
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Initialize / refresh challenge state ──────────────────────
   useEffect(() => {
@@ -153,6 +176,27 @@ export default function App() {
   }, [addXP, pushAlert])
 
   // ── Session management ────────────────────────────────────────
+  const startPlannedWorkout = useCallback((planDay) => {
+    const exercises = (planDay.exercises || []).map(ex =>
+      buildExercise({ muscle: ex.muscle, name: ex.name, numSets: ex.sets || 3 })
+    )
+    const session = {
+      id:           Date.now(),
+      date:         new Date().toISOString(),
+      duration:     null,
+      exercises,
+      planDayName:  planDay.name,
+      planDayIndex: planIndex,
+    }
+    setActive(session)
+    setTab('workout')
+  }, [planIndex])
+
+  const skipPlanDay = useCallback(() => {
+    setPlanIndex(prev => prev + 1)
+    pushAlert('⏭️', 'تم تخطي يوم التمرين')
+  }, [pushAlert])
+
   const startWorkout = useCallback((exercises = []) => {
     const session = {
       id:        Date.now(),
@@ -183,6 +227,11 @@ export default function App() {
 
       return newSessions
     })
+
+    // Advance plan index when a planned session is completed
+    if (active.planDayIndex !== undefined) {
+      setPlanIndex(active.planDayIndex + 1)
+    }
 
     setActive(null)
     setTab('home')
@@ -220,6 +269,8 @@ export default function App() {
       maxWidth: 560,
       margin: '0 auto',
       position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
     }}>
       {/* ── Header ──────────────────────────────────────────────── */}
       <header style={{
@@ -232,7 +283,7 @@ export default function App() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{
-              fontFamily: 'var(--font-mono)', fontSize: 9,
+              fontFamily: 'var(--font-mono)', fontSize: 10,
               letterSpacing: 3, color: 'var(--text3)', marginBottom: 2,
             }}>HAMZAFIT</div>
             <div style={{
@@ -255,18 +306,6 @@ export default function App() {
               }}>🔥 {streak}</div>
             )}
             <button
-              onClick={() => setShowSettings(true)}
-              style={{
-                background: 'var(--bg2)', border: '1px solid var(--border)',
-                borderRadius: 8, width: 36, height: 36,
-                color: 'var(--text2)', cursor: 'pointer',
-                fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'border-color 0.15s',
-              }}
-              onMouseOver={e => e.currentTarget.style.borderColor = 'var(--cyan)'}
-              onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border)'}
-            ><SettingsIcon size={18} color="var(--text2)" /></button>
-            <button
               onClick={() => setShowRest(true)}
               style={{
                 background: 'var(--bg2)', border: '1px solid var(--border)',
@@ -278,6 +317,18 @@ export default function App() {
               onMouseOver={e => e.currentTarget.style.borderColor = 'var(--cyan)'}
               onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border)'}
             >⏱️</button>
+            <button
+              onClick={() => setTab(t => t === 'settings' ? 'home' : 'settings')}
+              style={{
+                background: 'var(--bg2)', border: '1px solid var(--border)',
+                borderRadius: 8, width: 36, height: 36,
+                color: tab === 'settings' ? 'var(--cyan)' : 'var(--text2)', cursor: 'pointer',
+                fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'border-color 0.15s',
+              }}
+              onMouseOver={e => e.currentTarget.style.borderColor = 'var(--cyan)'}
+              onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border)'}
+            ><SettingsIcon size={18} /></button>
           </div>
         </div>
       </header>
@@ -286,7 +337,7 @@ export default function App() {
       <main
         key={tab}
         className="page-enter"
-        style={{ padding: '16px 14px 0' }}
+        style={{ padding: '16px 14px 0', flex: 1 }}
       >
         {tab === 'home' && (
           <HomePage
@@ -295,7 +346,11 @@ export default function App() {
             streak={streak}
             profile={profile}
             active={active}
+            plan={plan}
+            planIndex={planIndex}
             onStartWorkout={() => startWorkout()}
+            onStartPlannedWorkout={startPlannedWorkout}
+            onSkipPlanDay={skipPlanDay}
             onGoToWorkout={() => setTab('workout')}
           />
         )}
@@ -303,12 +358,18 @@ export default function App() {
           <WorkoutPage
             active={active}
             sessions={sessions}
+            plan={plan}
+            planIndex={planIndex}
             onUpdateActive={updateActive}
             onFinish={finishSession}
-            onShowRest={() => setShowRest(true)}
+            onShowRest={() => { setShowRest(true); setRestKey(k => k + 1) }}
+            onStartPlannedWorkout={startPlannedWorkout}
             addXP={addXP}
+            onGoBack={() => { setActive(null); setShowRest(false); setTab('home') }}
+            isResting={showRest}
           />
         )}
+        {tab === 'exercises' && <ExercisesPage sessions={sessions} />}
         {tab === 'challenges' && (
           <ChallengesPage
             sessions={sessions}
@@ -334,6 +395,38 @@ export default function App() {
             streak={streak}
             level={level}
             onUpdateProfile={handleUpdateProfile}
+            onGoToPhotos={() => setTab('photos')}
+          />
+        )}
+        {tab === 'settings' && (
+          <SettingsPage
+            profile={profile}
+            onUpdateProfile={handleUpdateProfile}
+            sessions={sessions}
+            xp={xp}
+            unlockedAchievements={unlockedAchievements}
+            challengeState={challengeState}
+            photos={photos}
+            plan={plan}
+            onImportPlan={(p) => { setPlan(p); setPlanIndex(0); pushAlert('📋', `تم استيراد خطة: ${p.planName}`) }}
+            onClearPlan={() => { setPlan(null); setPlanIndex(0) }}
+            onImport={(data) => {
+              if (data.sessions !== undefined)           setSessions(data.sessions)
+              if (data.xp !== undefined)                 setXP(data.xp)
+              if (data.profile)                          setProfile(data.profile)
+              if (data.unlockedAchievements)             setUnlockedAchievements(data.unlockedAchievements)
+              if (data.challengeState)                   setChallengeState(data.challengeState)
+              if (data.photos)                           setPhotos(data.photos)
+              if (data.plan)                             { setPlan(data.plan); setPlanIndex(data.planIndex ?? 0) }
+              pushAlert('✅', 'تم استيراد البيانات بنجاح!')
+            }}
+          />
+        )}
+        {tab === 'photos' && (
+          <PhotosPage
+            photos={photos}
+            setPhotos={setPhotos}
+            onBack={() => setTab('profile')}
           />
         )}
       </main>
@@ -347,8 +440,10 @@ export default function App() {
         borderTop: '1px solid var(--border)',
         backdropFilter: 'blur(20px)',
         display: 'flex',
-        padding: `10px 6px calc(var(--safe-bottom) + 10px)`,
-        zIndex: 100,
+        padding: `10px 6px calc(env(safe-area-inset-bottom, 0px) + 10px)`,
+        zIndex: 200,
+        maxWidth: 560,
+        margin: '0 auto',
       }}>
         {NAV_TABS.map(t => {
           const isActive = tab === t.id
@@ -377,23 +472,20 @@ export default function App() {
               )}
 
               <div style={{
-                width: 44, height: 32,
+                width: 38, height: 28,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: 10,
+                borderRadius: 8,
                 background: isActive ? 'var(--cyan-lo)' : 'transparent',
                 transition: 'background 0.2s',
               }}>
-                {IconComp && (
-                  <IconComp
-                    size={22}
-                    color={isActive ? 'var(--cyan)' : '#4B5563'}
-                    filled={isActive}
-                  />
-                )}
+                {IconComp
+                  ? <IconComp size={19} color={isActive ? 'var(--cyan)' : '#4B5563'} filled={isActive} />
+                  : <span style={{ fontSize: 17, opacity: isActive ? 1 : 0.45 }}>{t.icon}</span>
+                }
               </div>
 
               <span style={{
-                fontFamily: 'var(--font-ar)', fontSize: 10,
+                fontFamily: 'var(--font-ar)', fontSize: 11,
                 color: isActive ? 'var(--cyan)' : '#4B5563',
                 fontWeight: isActive ? 700 : 500,
                 transition: 'color 0.15s',
@@ -404,18 +496,8 @@ export default function App() {
       </nav>
 
       {/* ── Overlays ─────────────────────────────────────────────── */}
-      {showRest    && <RestTimer    onClose={() => setShowRest(false)} />}
+      {showRest    && <RestTimer key={restKey} onClose={() => setShowRest(false)} />}
       {showLevelUp && <LevelUpScreen level={levelUpNum} onDismiss={() => setShowLevelUp(false)} />}
-      {showSettings && (
-        <SettingsPage
-          profile={profile}
-          onUpdateProfile={handleUpdateProfile}
-          onClose={() => setShowSettings(false)}
-          sessions={sessions}
-          xp={xp}
-          unlockedAchievements={unlockedAchievements}
-        />
-      )}
       <SystemAlert alerts={alerts} onRemove={removeAlert} />
     </div>
   )

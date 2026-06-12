@@ -182,13 +182,13 @@ export const MUSCLE_GROUPS = {
   Cardio: {
     label: 'الكارديو', emoji: '❤️', color: '#EF4444', img: '/assets/cardio.png',
     exercises: [
-      { name: 'Treadmill Run',    videoUrl: 'https://www.youtube.com/watch?v=kwtpGFQ4Xew', tips: ['ابدأ بالمشي السريع للإحماء دقيقتين', 'الخطوة المتوسطة أفضل للمفاصل', 'المشي بزاوية ميل يحرق سعرات أكثر'] },
-      { name: 'Rowing Machine',   videoUrl: 'https://www.youtube.com/watch?v=lXjvoUeRLxU', tips: ['الترتيب: الأرجل ثم الظهر ثم الذراعين', 'لا تقوس الظهر — احذر من هذا', 'وتيرة 22-28 شوطاً في الدقيقة مثالية'] },
-      { name: 'Jump Rope',        videoUrl: 'https://www.youtube.com/watch?v=s-8tbwbEZ68', tips: ['انط على أصابع القدمين لا الكعبين', 'ابدأ ببطء وزد الوتيرة تدريجياً', 'يحرق السعرات بشكل ممتاز في وقت قصير'] },
-      { name: 'Stationary Bike',  videoUrl: 'https://www.youtube.com/watch?v=ufhbfTWpYEk', tips: ['اضبط ارتفاع المقعد: الركبة شبه ممدودة في أسفل الدورة', 'الركبة الأمامية لا تتعدى القدم عند أعلى نقطة', 'مريح جداً للمفاصل مقارنة بالجري'] },
-      { name: 'Stair Climber',    videoUrl: 'https://www.youtube.com/watch?v=6eMPlQ95gXI', tips: ['لا تعتمد على الدرابزين كثيراً', 'الخطوات بعمق للاستهداف الأمثل للأرداف', 'يستهدف الأرداف والساق والكور معاً'] },
-      { name: 'Battle Ropes',     videoUrl: 'https://www.youtube.com/watch?v=zw0OMi00X5g', tips: ['الجسم في وضع التمريرة: ركبتان مثنيتان', 'حرك الحبلين معاً أو بالتناوب', 'يتطلب قوة هائلة ويرفع معدل ضربات القلب بسرعة'] },
-      { name: 'Sled Push',        videoUrl: 'https://www.youtube.com/watch?v=YJbKlXj4WhI', tips: ['أمِل الجسم للأمام بزاوية 45 درجة', 'الخطوات قصيرة وسريعة', 'يطوّر القوة الانفجارية للساق والكور'] },
+      { name: 'Treadmill Run',    videoUrl: 'https://www.youtube.com/results?search_query=Treadmill+Running+proper+form+shorts', tips: ['ابدأ بالمشي السريع للإحماء دقيقتين', 'الخطوة المتوسطة أفضل للمفاصل', 'المشي بزاوية ميل يحرق سعرات أكثر'] },
+      { name: 'Rowing Machine',   videoUrl: 'https://www.youtube.com/results?search_query=Rowing+Machine+proper+form+shorts', tips: ['الترتيب: الأرجل ثم الظهر ثم الذراعين', 'لا تقوس الظهر — احذر من هذا', 'وتيرة 22-28 شوطاً في الدقيقة مثالية'] },
+      { name: 'Jump Rope',        videoUrl: 'https://www.youtube.com/results?search_query=Jump+Rope+proper+form+shorts', tips: ['انط على أصابع القدمين لا الكعبين', 'ابدأ ببطء وزد الوتيرة تدريجياً', 'يحرق السعرات بشكل ممتاز في وقت قصير'] },
+      { name: 'Stationary Bike',  videoUrl: 'https://www.youtube.com/results?search_query=Stationary+Bike+proper+form+shorts', tips: ['اضبط ارتفاع المقعد: الركبة شبه ممدودة في أسفل الدورة', 'الركبة الأمامية لا تتعدى القدم عند أعلى نقطة', 'مريح جداً للمفاصل مقارنة بالجري'] },
+      { name: 'Stair Climber',    videoUrl: 'https://www.youtube.com/results?search_query=Stair+Climber+proper+form+shorts', tips: ['لا تعتمد على الدرابزين كثيراً', 'الخطوات بعمق للاستهداف الأمثل للأرداف', 'يستهدف الأرداف والساق والكور معاً'] },
+      { name: 'Battle Ropes',     videoUrl: 'https://www.youtube.com/results?search_query=Battle+Ropes+proper+form+shorts', tips: ['الجسم في وضع التمريرة: ركبتان مثنيتان', 'حرك الحبلين معاً أو بالتناوب', 'يتطلب قوة هائلة ويرفع معدل ضربات القلب بسرعة'] },
+      { name: 'Sled Push',        videoUrl: 'https://www.youtube.com/results?search_query=Sled+Push+proper+form+shorts', tips: ['أمِل الجسم للأمام بزاوية 45 درجة', 'الخطوات قصيرة وسريعة', 'يطوّر القوة الانفجارية للساق والكور'] },
     ],
   },
 }
@@ -735,18 +735,120 @@ export const REST_PRESETS = [45, 60, 90, 120, 180]
 
 // ── Nav Tabs (RTL order: Profile | Achievements | Challenges | Workout | Home) ─
 export const NAV_TABS = [
-  { id: 'profile',      label: 'الملف',    icon: '👤' },
-  { id: 'achievements', label: 'جوائز',    icon: '🏆' },
-  { id: 'challenges',   label: 'تحديات',   icon: '🏳️' },
-  { id: 'workout',      label: 'تمرين',    icon: '⚔️' },
   { id: 'home',         label: 'الرئيسية', icon: '🏠' },
+  { id: 'workout',      label: 'تمرين',    icon: '⚔️' },
+  { id: 'exercises',    label: 'التمارين', icon: '📚' },
+  { id: 'achievements', label: 'جوائز',    icon: '🏆' },
+  { id: 'profile',      label: 'الملف',    icon: '👤' },
 ]
 // Settings accessible via gear icon in header (not a nav tab)
+
+export const PLAN_TEMPLATE = {
+  version: '1.0',
+  planName: 'اسم الخطة',
+  startDate: new Date().toISOString().split('T')[0],
+  durationWeeks: 12,
+  goal: 'muscle',
+  weeklySchedule: [
+    {
+      dayOfWeek: 1,
+      name: 'Push Day',
+      exercises: [
+        { muscle: 'Chest',     name: 'Bench Press',      sets: 4, repsMin: 8,  repsMax: 12, restSeconds: 120 },
+        { muscle: 'Chest',     name: 'Incline Bench Press', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 90 },
+        { muscle: 'Shoulders', name: 'Overhead Press',   sets: 3, repsMin: 8,  repsMax: 10, restSeconds: 120 },
+        { muscle: 'Shoulders', name: 'Lateral Raise',    sets: 4, repsMin: 12, repsMax: 15, restSeconds: 60  },
+        { muscle: 'Triceps',   name: 'Triceps Pushdown', sets: 3, repsMin: 10, repsMax: 15, restSeconds: 60  },
+      ],
+    },
+    {
+      dayOfWeek: 3,
+      name: 'Pull Day',
+      exercises: [
+        { muscle: 'Back',   name: 'Deadlift',      sets: 4, repsMin: 5,  repsMax: 8,  restSeconds: 180 },
+        { muscle: 'Back',   name: 'Lat Pulldown',  sets: 3, repsMin: 10, repsMax: 12, restSeconds: 90  },
+        { muscle: 'Back',   name: 'Barbell Row',   sets: 3, repsMin: 8,  repsMax: 10, restSeconds: 120 },
+        { muscle: 'Biceps', name: 'Barbell Curl',  sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60  },
+        { muscle: 'Biceps', name: 'Hammer Curl',   sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60  },
+      ],
+    },
+    {
+      dayOfWeek: 5,
+      name: 'Legs Day',
+      exercises: [
+        { muscle: 'Legs', name: 'Barbell Squat',     sets: 4, repsMin: 6,  repsMax: 10, restSeconds: 180 },
+        { muscle: 'Legs', name: 'Romanian Deadlift', sets: 3, repsMin: 8,  repsMax: 12, restSeconds: 120 },
+        { muscle: 'Legs', name: 'Leg Press',         sets: 3, repsMin: 10, repsMax: 15, restSeconds: 90  },
+        { muscle: 'Legs', name: 'Leg Extension',     sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60  },
+        { muscle: 'Legs', name: 'Calf Raise',        sets: 4, repsMin: 15, repsMax: 20, restSeconds: 45  },
+      ],
+    },
+  ],
+}
+
+export const AI_PLAN_PROMPT = `أنا أستخدم تطبيق HamzaFit لتتبع التمارين. أحتاج منك ملء الـ JSON التالي بخطة تمرين مخصصة بناءً على [PDF/الفيديو/البرنامج] المرفق.
+
+قواعد مهمة:
+- قيم "muscle" يجب أن تكون فقط من: Chest, Back, Shoulders, Legs, Biceps, Triceps, Core, Cardio
+- "dayOfWeek": 0=الأحد، 1=الاثنين، 2=الثلاثاء، 3=الأربعاء، 4=الخميس، 5=الجمعة، 6=السبت
+- "goal": muscle | strength | fat_loss | endurance | recomp | maintain
+- أبقِ نفس هيكل JSON بالضبط، فقط غيّر القيم
+
+هيكل JSON:
+TEMPLATE_PLACEHOLDER
+
+أعطني الـ JSON المكتمل فقط بدون أي شرح إضافي.`
+
+export const NOTIFICATION_MESSAGES = {
+  morning: [
+    { title: '🌅 صباح التحدي', body: 'كل يوم فرصة جديدة تكون أقوى من أمس.' },
+    { title: '⚔️ يوم جديد', body: 'المحارب الحقيقي لا ينتظر الحافز — هو يصنعه.' },
+    { title: '💜 صباح الطاقة', body: 'بدنك ينتظر التحدي — أطعمه الحركة اليوم.' },
+    { title: '🔥 بداية النهار', body: 'الفرق بينك وبين أهدافك: الاستمرارية.' },
+    { title: '🌄 الصباح للأبطال', body: 'اليوم تكتب صفحة جديدة في رحلتك.' },
+  ],
+  tip: [
+    { title: '💡 نصيحة التمرين', body: 'استرح دقيقتين بين السيتات للعضلات الكبيرة.' },
+    { title: '📊 معلومة عضلية', body: 'العضلة تنمو وقت الراحة لا وقت التمرين — نم جيداً.' },
+    { title: '🔬 علم الجسم', body: 'الحمل التدريجي هو السر الوحيد للنمو العضلي.' },
+    { title: '⚡ تقنية السيت', body: 'البطء في الإرجاع أكثر فائدة من السرعة في الرفع.' },
+    { title: '🏋️ حكمة الجيم', body: 'الشكل الصحيح أهم من الوزن — الإصابة تضيع أشهر.' },
+    { title: '💧 تذكير مائي', body: 'اشرب ماءً الآن — الجفاف يقلل قوتك ٢٠٪.' },
+    { title: '🧠 نصيحة ذهنية', body: 'تخيل العضلة تعمل أثناء التمرين — أثبتها الأبحاث.' },
+    { title: '🥩 بروتين اليوم', body: 'تناول بروتيناً بعد التمرين بـ 30 دقيقة للحصول على أفضل نتيجة.' },
+  ],
+  hydration: [
+    { title: '💧 حان وقت الماء', body: 'اشرب ٥٠٠مل ماء الآن — جسمك يحتاجه.' },
+    { title: '🥤 تذكير مائي', body: 'الجفاف يقلل الأداء ٢٠٪ — اشرب الآن!' },
+    { title: '⚗️ الهيدرا أولاً', body: 'لا تنسَ الماء — هو الأساس قبل أي مكمل.' },
+  ],
+  workout: [
+    { title: '⚔️ حان وقت الجيم!', body: 'الجيم ينتظرك — هيا نحصد القوة اليوم!' },
+    { title: '💪 لا عذر اليوم!', body: 'أغلق الهاتف وافتح الشنطة — وقت التمرين.' },
+    { title: '🔥 النار تشتعل!', body: 'جسمك جاهز والجيم ينتظر — قم الآن.' },
+    { title: '⚡ انطلق يا حمزة!', body: 'كل جلسة تمرين تقربك من النسخة الأفضل.' },
+    { title: '🏆 وقت الإنجاز!', body: 'المحاربون لا يتأخرون — حان دورك.' },
+  ],
+  evening: [
+    { title: '🌙 مراجعة اليوم', body: 'هل أكملت تمرينك اليوم؟ سجّله في التطبيق.' },
+    { title: '⭐ يوم قوي آخر', body: 'الاستمرارية هي الفوز — فخور بك اليوم.' },
+    { title: '😴 قبل النوم', body: 'النوم الجيد = نمو عضلي أفضل — استرح مبكراً.' },
+    { title: '🗓️ جهّز لغد', body: 'جهّز شنطتك الآن حتى لا يكون لديك عذر غداً.' },
+    { title: '💜 احتفل بنفسك', body: 'كل يوم تستمر فيه هو انتصار — أنت رائع.' },
+  ],
+}
+
+export const WORKOUT_TIME_HOURS = {
+  'الصباح':  7,
+  'الظهيرة': 12,
+  'المساء':  17,
+  'الليل':   20,
+}
 
 // ── XP Rates ──────────────────────────────────────────────────
 export const XP_RATES = {
   set_done:       10,
   session_finish: 50,
   session_hour:   30,
-  challenge:      1,  // multiplier for challenge xp
+  challenge:      1,
 }
