@@ -36,6 +36,7 @@ import RestTimer        from './components/RestTimer.jsx'
 import RoutinesModal    from './components/RoutinesModal.jsx'
 import LevelUpScreen    from './components/LevelUpScreen.jsx'
 import SystemAlert      from './components/SystemAlert.jsx'
+import SplashScreen     from './components/SplashScreen.jsx'
 
 // Stable greeting per session
 const GREETING = GREETINGS[Math.floor(Math.random() * GREETINGS.length)]
@@ -74,6 +75,7 @@ export default function App() {
   const [alerts,     setAlerts]     = useState([])
   const [restKey,    setRestKey]    = useState(0)
   const [photos,     setPhotos]     = useState(() => ls.get('hf_photos', []))
+  const [showSplash, setShowSplash] = useState(true)
 
   const prevLevelRef = useRef(levelFromXP(xp))
 
@@ -272,6 +274,8 @@ export default function App() {
       display: 'flex',
       flexDirection: 'column',
     }}>
+      {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+
       {/* ── Header ──────────────────────────────────────────────── */}
       <header style={{
         background: 'rgba(7,8,12,0.92)',
