@@ -69,7 +69,7 @@ function parseTemplate(text) {
 }
 
 export default function Settings() {
-  const { settings, updateSettings, setPage } = useApp();
+  const { settings, updateSettings, setPage, syncStatus, lastSynced, scheduleSync, pullFromCloud } = useApp();
   const [salary, setSalary] = useState(String(settings.salary));
   const [salaryDay, setSalaryDay] = useState(settings.salaryDay);
   const [saved, setSaved] = useState(false);
@@ -167,6 +167,33 @@ export default function Settings() {
       setPinError('فشل تسجيل البصمة — تأكد من دعم الجهاز');
     }
     setBiometricLoading(false);
+  }
+
+  const [cloudApiKey, setCloudApiKeyLocal] = useState(settings.cloudApiKey || '');
+  const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [pullStatus, setPullStatus] = useState('idle'); // 'idle' | 'loading' | 'ok' | 'error'
+  const [pullError, setPullError] = useState('');
+
+  async function handleSaveApiKey() {
+    await updateSettings({ cloudApiKey: cloudApiKey.trim() });
+    setApiKeySaved(true);
+    setTimeout(() => setApiKeySaved(false), 2000);
+  }
+
+  async function handlePull() {
+    setPullStatus('loading');
+    setPullError('');
+    const result = await pullFromCloud();
+    if (result.ok) {
+      setPullStatus('ok');
+    } else {
+      setPullStatus('idle');
+      setPullError(
+        result.error === 'no-data' ? 'لا توجد بيانات محفوظة في السحابة بعد'
+        : result.error === 'no-key' ? 'أدخل مفتاح API أولاً'
+        : 'حدث خطأ في الاتصال'
+      );
+    }
   }
 
   const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | updating | current | error
@@ -573,6 +600,85 @@ export default function Settings() {
             )}
             <p style={{ color: 'var(--text3)', fontSize: 12 }}>
               جميع البيانات محفوظة محلياً على جهازك فقط
+            </p>
+          </div>
+        </section>
+
+        {/* Cloud Sync */}
+        <section>
+          <div style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 700, marginBottom: 12 }}>☁️ المزامنة السحابية</div>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Sync status row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+                  background: syncStatus === 'ok' ? 'var(--accent)' : syncStatus === 'error' ? 'var(--danger)' : syncStatus === 'syncing' ? 'var(--primary)' : 'var(--border)',
+                  boxShadow: syncStatus === 'syncing' ? '0 0 0 4px var(--primary-dim)' : 'none',
+                  transition: 'all .3s',
+                }} />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>
+                    {syncStatus === 'ok' ? 'تمت المزامنة' : syncStatus === 'error' ? 'فشلت المزامنة' : syncStatus === 'syncing' ? 'جاري المزامنة...' : 'غير مكوّنة'}
+                  </div>
+                  {lastSynced && (
+                    <div style={{ color: 'var(--text3)', fontSize: 11, fontFamily: 'Cairo, sans-serif' }}>
+                      {new Date(lastSynced).toLocaleString('ar-SA')}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button onClick={scheduleSync} style={{
+                background: 'var(--card2)', border: '1px solid var(--border)',
+                borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+                fontFamily: 'Mestika, Cairo, sans-serif', fontWeight: 700, fontSize: 12,
+                color: 'var(--text2)',
+              }}>
+                زامن الآن
+              </button>
+            </div>
+
+            {/* API key input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 700 }}>مفتاح API</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="password"
+                  className="input"
+                  style={{ flex: 1, fontFamily: 'Cairo, monospace', fontSize: 12 }}
+                  placeholder="أدخل مفتاح API هنا..."
+                  value={cloudApiKey}
+                  onChange={e => setCloudApiKeyLocal(e.target.value)}
+                />
+                <button onClick={handleSaveApiKey} style={{
+                  background: apiKeySaved ? 'var(--accent)' : 'var(--primary)',
+                  border: 'none', borderRadius: 10, padding: '0 16px', cursor: 'pointer',
+                  fontFamily: 'Mestika, Cairo, sans-serif', fontWeight: 700, fontSize: 13, color: '#fff',
+                  transition: 'background .2s', whiteSpace: 'nowrap',
+                }}>
+                  {apiKeySaved ? '✓' : 'حفظ'}
+                </button>
+              </div>
+            </div>
+
+            {/* Pull from cloud */}
+            <button onClick={handlePull} disabled={pullStatus === 'loading' || pullStatus === 'ok'}
+              style={{
+                padding: '12px', borderRadius: 10, border: '1.5px solid var(--danger)',
+                background: pullStatus === 'ok' ? 'var(--accent-dim)' : 'transparent',
+                color: pullStatus === 'ok' ? 'var(--accent)' : 'var(--danger)',
+                cursor: 'pointer', fontFamily: 'Mestika, Cairo, sans-serif',
+                fontWeight: 700, fontSize: 14, transition: 'all .2s',
+              }}>
+              {pullStatus === 'loading' ? 'جاري الاسترجاع...' : pullStatus === 'ok' ? '✓ تم الاسترجاع!' : '⬇️ استرجاع من السحابة'}
+            </button>
+            {pullError && (
+              <div style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center' }}>{pullError}</div>
+            )}
+
+            <p style={{ color: 'var(--text3)', fontSize: 12 }}>
+              البيانات تُزامن تلقائياً عند أي تعديل
             </p>
           </div>
         </section>
