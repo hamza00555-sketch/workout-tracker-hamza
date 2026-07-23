@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS = {
   salary: 0, salaryDay: 25, currency: 'ريال',
   onboardingComplete: false,
   cloudApiKey: '',
+  webhookUrl: '',
 };
 
 export function AppProvider({ children }) {

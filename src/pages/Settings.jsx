@@ -169,6 +169,39 @@ export default function Settings() {
     setBiometricLoading(false);
   }
 
+  const [webhookUrl, setWebhookUrl] = useState(settings.webhookUrl || '');
+  const [webhookStatus, setWebhookStatus] = useState('idle'); // 'idle' | 'sending' | 'ok' | 'error'
+  const [webhookError, setWebhookError] = useState('');
+
+  async function handleSaveWebhookUrl() {
+    await updateSettings({ webhookUrl: webhookUrl.trim() });
+  }
+
+  async function handleSendWebhook() {
+    const url = webhookUrl.trim() || settings.webhookUrl;
+    if (!url) { setWebhookError('أدخل رابط الـ Webhook أولاً'); return; }
+    setWebhookStatus('sending');
+    setWebhookError('');
+    try {
+      const snapshot = await db.exportAll();
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: 'ratebi', ...snapshot }),
+      });
+      if (res.ok) {
+        setWebhookStatus('ok');
+        setTimeout(() => setWebhookStatus('idle'), 3000);
+      } else {
+        setWebhookStatus('error');
+        setWebhookError(`الخادم رفض الطلب (${res.status})`);
+      }
+    } catch (err) {
+      setWebhookStatus('error');
+      setWebhookError('تعذّر الاتصال — تحقق من الرابط');
+    }
+  }
+
   const [cloudApiKey, setCloudApiKeyLocal] = useState(settings.cloudApiKey || '');
   const [apiKeySaved, setApiKeySaved] = useState(false);
   const [pullStatus, setPullStatus] = useState('idle'); // 'idle' | 'loading' | 'ok' | 'error'
@@ -601,6 +634,65 @@ export default function Settings() {
             <p style={{ color: 'var(--text3)', fontSize: 12 }}>
               جميع البيانات محفوظة محلياً على جهازك فقط
             </p>
+          </div>
+        </section>
+
+        {/* Send to App (Webhook) */}
+        <section>
+          <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 700, marginBottom: 12 }}>📤 إرسال البيانات لتطبيق آخر</div>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7 }}>
+              اضغط الزر لإرسال بياناتك لأي تطبيق أو خدمة — فقط أدخل رابط الاستقبال (Webhook URL).
+            </p>
+
+            {/* URL input */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="url"
+                className="input"
+                style={{ flex: 1, fontFamily: 'Cairo, monospace', fontSize: 12, direction: 'ltr' }}
+                placeholder="https://your-app.com/webhook"
+                value={webhookUrl}
+                onChange={e => { setWebhookUrl(e.target.value); setWebhookError(''); }}
+                onBlur={handleSaveWebhookUrl}
+              />
+            </div>
+
+            {webhookError && (
+              <div style={{ background: 'var(--danger-dim)', borderRadius: 10, padding: '10px 14px', color: 'var(--danger)', fontSize: 13 }}>
+                ⚠️ {webhookError}
+              </div>
+            )}
+
+            {/* Send button */}
+            <button
+              onClick={handleSendWebhook}
+              disabled={webhookStatus === 'sending'}
+              style={{
+                padding: '14px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                fontFamily: 'Mestika, Cairo, sans-serif', fontWeight: 700, fontSize: 15,
+                transition: 'all .2s',
+                background: webhookStatus === 'ok' ? 'var(--accent)'
+                  : webhookStatus === 'error' ? 'var(--danger)'
+                  : 'var(--primary)',
+                color: '#fff',
+                opacity: webhookStatus === 'sending' ? 0.7 : 1,
+              }}>
+              {webhookStatus === 'sending' ? 'جاري الإرسال...'
+                : webhookStatus === 'ok' ? '✓ تم الإرسال بنجاح!'
+                : webhookStatus === 'error' ? '✕ فشل الإرسال — اضغط للمحاولة'
+                : '📤 إرسال البيانات الآن'}
+            </button>
+
+            <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ color: 'var(--text2)', fontSize: 12, lineHeight: 1.8 }}>
+                البيانات المُرسلة تشمل:
+                <br />• الالتزامات والأهداف والبنوك
+                <br />• الديون والدخل الإضافي
+                <br />• السجلات الشهرية وإعدادات الراتب
+              </div>
+            </div>
           </div>
         </section>
 
