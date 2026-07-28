@@ -5,12 +5,6 @@ import {
   browserSessionPersistence,
   setPersistence,
 } from 'firebase/auth';
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-  getFirestore,
-} from 'firebase/firestore';
 
 const REQUIRED = [
   'VITE_FIREBASE_API_KEY',
@@ -26,7 +20,7 @@ export const isFirebaseConfigured =
   REQUIRED.every(k => import.meta.env?.[k]?.trim());
 
 let _auth = null;
-let _firestore = null;
+let _projectId = null;
 
 if (isFirebaseConfigured) {
   const config = {
@@ -37,6 +31,7 @@ if (isFirebaseConfigured) {
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
     appId:             import.meta.env.VITE_FIREBASE_APP_ID,
   };
+  _projectId = config.projectId;
 
   const app = getApps().length ? getApps()[0] : initializeApp(config);
 
@@ -46,21 +41,7 @@ if (isFirebaseConfigured) {
     setPersistence(firebaseAuth, browserSessionPersistence).catch(() => {})
   );
   _auth = firebaseAuth;
-
-  try {
-    _firestore = initializeFirestore(app, {
-      // بعض شبكات الجوال والبروكسيات تحجب قناة Firestore الافتراضية وتترك
-      // عملية الحفظ معلّقة. Long polling أكثر ثباتاً لهذا الربط المباشر.
-      experimentalForceLongPolling: true,
-      useFetchStreams: false,
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-      }),
-    });
-  } catch {
-    try { _firestore = getFirestore(app); } catch {}
-  }
 }
 
 export const auth = _auth;
-export const firestore = _firestore;
+export const firebaseProjectId = _projectId;
