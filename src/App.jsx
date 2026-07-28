@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext.jsx';
+import { RushdSyncProvider } from './context/RushdSyncContext.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import Onboarding from './pages/Onboarding.jsx';
 import SalaryDay from './pages/SalaryDay.jsx';
@@ -13,7 +14,15 @@ import LockScreen from './pages/LockScreen.jsx';
 const NAV_PAGES = ['dashboard', 'commitments', 'banks', 'goals', 'settings'];
 
 function AppRouter() {
-  const { page, loading, locked } = useApp();
+  const { page, loading, locked, setPage } = useApp();
+
+  // Navigate to Settings when ?connect=rushd is in the URL
+  useEffect(() => {
+    if (!loading && !locked) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('connect') === 'rushd') setPage('settings');
+    }
+  }, [loading, locked]);
 
   if (loading) return (
     <div style={{
@@ -62,7 +71,9 @@ export default function App() {
 
   return (
     <AppProvider>
-      <AppRouter />
+      <RushdSyncProvider>
+        <AppRouter />
+      </RushdSyncProvider>
     </AppProvider>
   );
 }

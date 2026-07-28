@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext.jsx';
+import { useRushdSync } from '../context/RushdSyncContext.jsx';
 import * as db from '../db/index.js';
 import { uid } from '../utils/format.js';
 import {
@@ -68,8 +69,18 @@ function parseTemplate(text) {
   return { salary, salaryDay, commitments, goals };
 }
 
+function maskEmail(email) {
+  if (!email) return '';
+  const [user, domain] = email.split('@');
+  return `${user.slice(0, 2)}***@${domain}`;
+}
+
 export default function Settings() {
   const { settings, updateSettings, setPage } = useApp();
+  const {
+    status: rushdStatus, rushdUser, lastSyncedAt, error: rushdError,
+    login: rushdLogin, logout: rushdLogout, syncNow: rushdSyncNow, isConfigured: rushdConfigured,
+  } = useRushdSync();
   const [salary, setSalary] = useState(String(settings.salary));
   const [salaryDay, setSalaryDay] = useState(settings.salaryDay);
   const [saved, setSaved] = useState(false);
@@ -167,6 +178,34 @@ export default function Settings() {
       setPinError('فشل تسجيل البصمة — تأكد من دعم الجهاز');
     }
     setBiometricLoading(false);
+  }
+
+  // ── ربط رُشد state ──────────────────────────────────────────────────────
+  const [rushdEmail, setRushdEmail] = useState('');
+  const [rushdPass, setRushdPass] = useState('');
+  const [rushdLoginLoading, setRushdLoginLoading] = useState(false);
+  const [rushdLoginError, setRushdLoginError] = useState('');
+  const [wishesBudget, setWishesBudget] = useState(String(settings.rushdWishesBudget || ''));
+  const [wishesSpent, setWishesSpent] = useState(String(settings.rushdWishesSpent || ''));
+  const rushdRef = useRef(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('connect') === 'rushd' && rushdRef.current) {
+      setTimeout(() => rushdRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
+    }
+  }, []);
+
+  async function handleRushdLogin(e) {
+    e?.preventDefault();
+    if (!rushdEmail.trim() || !rushdPass) return;
+    setRushdLoginLoading(true);
+    setRushdLoginError('');
+    const result = await rushdLogin(rushdEmail, rushdPass);
+    setRushdPass('');
+    setRushdLoginLoading(false);
+    if (!result.ok) setRushdLoginError(result.error);
+    if (result.ok) setRushdEmail('');
   }
 
   const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | updating | current | error
@@ -575,6 +614,163 @@ export default function Settings() {
               جميع البيانات محفوظة محلياً على جهازك فقط
             </p>
           </div>
+        </section>
+
+        {/* ربط رُشد */}
+        <section ref={rushdRef}>
+          <div style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 700, marginBottom: 12 }}>🔗 ربط رُشد</div>
+
+          {!rushdConfigured ? (
+            <div className="card">
+              <p style={{ color: 'var(--text2)', fontSize: 13, textAlign: 'center' }}>
+                ربط رُشد غير مهيأ في هذه النسخة.
+              </p>
+            </div>
+          ) : rushdUser ? (
+            // ── Connected state ────────────────────────────────────────────
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              {/* Status row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 11, height: 11, borderRadius: '50%', flexShrink: 0,
+                  background:
+                    rushdStatus === 'connected' ? 'var(--accent)'
+                    : rushdStatus === 'syncing'   ? 'var(--primary)'
+                    : rushdStatus === 'offline'   ? 'var(--gold)'
+                    : rushdStatus === 'error'     ? 'var(--danger)'
+                    : 'var(--border)',
+                  boxShadow: rushdStatus === 'syncing' ? '0 0 0 4px var(--primary-dim)' : 'none',
+                  transition: 'all .3s',
+                }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>
+                    {rushdStatus === 'connected' && 'متصل برُشد ✓'}
+                    {rushdStatus === 'syncing'   && 'جاري المزامنة...'}
+                    {rushdStatus === 'offline'   && 'دون اتصال — سنزامن عند عودة الإنترنت'}
+                    {rushdStatus === 'error'     && 'تعذّر التحديث'}
+                  </div>
+                  <div style={{ color: 'var(--text3)', fontSize: 11, fontFamily: 'Cairo, sans-serif', marginTop: 2 }}>
+                    {maskEmail(rushdUser.email)}
+                  </div>
+                  {lastSyncedAt && (
+                    <div style={{ color: 'var(--text3)', fontSize: 11, fontFamily: 'Cairo, sans-serif' }}>
+                      آخر مزامنة: {new Date(lastSyncedAt).toLocaleString('ar-SA')}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {rushdError && (
+                <div style={{ background: 'var(--danger-dim)', borderRadius: 10, padding: '10px 14px', color: 'var(--danger)', fontSize: 13 }}>
+                  {rushdError}
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={rushdSyncNow} disabled={rushdStatus === 'syncing'} style={{
+                  flex: 1, padding: '11px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  fontFamily: 'Mestika, Cairo, sans-serif', fontWeight: 700, fontSize: 14,
+                  background: 'var(--primary)', color: '#fff',
+                  opacity: rushdStatus === 'syncing' ? 0.65 : 1, transition: 'opacity .2s',
+                }}>
+                  زامن الآن
+                </button>
+                <button onClick={rushdLogout} style={{
+                  padding: '11px 16px', borderRadius: 10,
+                  border: '1.5px solid var(--border)', background: 'transparent',
+                  cursor: 'pointer', fontFamily: 'Mestika, Cairo, sans-serif', fontWeight: 700,
+                  fontSize: 14, color: 'var(--text2)',
+                }}>
+                  فصل رُشد
+                </button>
+              </div>
+
+              {/* Wishes budget */}
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+                <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 700, marginBottom: 10 }}>
+                  ميزانية الأماني (اختياري)
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div className="input-group">
+                    <label className="input-label">الميزانية الشهرية</label>
+                    <input
+                      className="input" type="number" inputMode="decimal"
+                      placeholder="0" value={wishesBudget}
+                      onChange={e => setWishesBudget(e.target.value)}
+                      onBlur={() => updateSettings({ rushdWishesBudget: Number(wishesBudget) || 0 })}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">المُصرف منها هذا الشهر</label>
+                    <input
+                      className="input" type="number" inputMode="decimal"
+                      placeholder="0" value={wishesSpent}
+                      onChange={e => setWishesSpent(e.target.value)}
+                      onBlur={() => updateSettings({ rushdWishesSpent: Number(wishesSpent) || 0 })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          ) : (
+            // ── Login form ────────────────────────────────────────────────
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7 }}>
+                ادخل بنفس البريد وكلمة المرور المستخدمة في تطبيق رُشد، وستُزامَن بياناتك المالية تلقائياً.
+              </p>
+
+              {rushdLoginError && (
+                <div style={{ background: 'var(--danger-dim)', borderRadius: 10, padding: '10px 14px', color: 'var(--danger)', fontSize: 13 }}>
+                  {rushdLoginError}
+                </div>
+              )}
+
+              <form onSubmit={handleRushdLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div className="input-group">
+                  <label className="input-label">البريد الإلكتروني</label>
+                  <input
+                    className="input" type="email" inputMode="email"
+                    placeholder="example@email.com" autoComplete="email"
+                    value={rushdEmail}
+                    onChange={e => { setRushdEmail(e.target.value); setRushdLoginError(''); }}
+                    style={{ direction: 'ltr', textAlign: 'left' }}
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">كلمة المرور</label>
+                  <input
+                    className="input" type="password" autoComplete="current-password"
+                    placeholder="••••••••"
+                    value={rushdPass}
+                    onChange={e => { setRushdPass(e.target.value); setRushdLoginError(''); }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={rushdLoginLoading || rushdStatus === 'connecting'}
+                  className="btn btn-primary"
+                  style={{ marginTop: 4, opacity: rushdLoginLoading ? 0.7 : 1 }}
+                >
+                  {rushdLoginLoading ? 'جاري الربط...' : 'ربط رُشد'}
+                </button>
+              </form>
+
+              <a
+                href="https://rushd-app-nine.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  textAlign: 'center', fontSize: 13, color: 'var(--primary)',
+                  textDecoration: 'underline', display: 'block',
+                }}
+              >
+                ليس لديك حساب؟ أنشئه في رُشد
+              </a>
+            </div>
+          )}
         </section>
 
         {/* App Update */}

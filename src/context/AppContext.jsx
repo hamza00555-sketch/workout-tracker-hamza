@@ -10,6 +10,8 @@ export const useApp = () => useContext(AppContext);
 const DEFAULT_SETTINGS = {
   salary: 0, salaryDay: 25, currency: 'ريال',
   onboardingComplete: false,
+  rushdWishesBudget: 0,
+  rushdWishesSpent: 0,
 };
 
 export function AppProvider({ children }) {
