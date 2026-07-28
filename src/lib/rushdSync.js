@@ -42,13 +42,14 @@ function clearPending() {
  * Sync راتبي data to Firestore users/{uid}/ratibiSync/{yyyy-mm}.
  * @param {object} opts
  * @param {boolean} opts.force - bypass fingerprint check (manual sync)
+ * @param {import('firebase/auth').User|null} opts.user - authenticated user from the auth listener
  * @returns {{ status: string, syncedAt?: string, errorKey?: string }}
  */
-export async function syncToRushd({ force = false } = {}) {
+export async function syncToRushd({ force = false, user = null } = {}) {
   if (!isFirebaseConfigured) return { status: 'unconfigured' };
 
-  const user = auth?.currentUser;
-  if (!user) return { status: 'disconnected' };
+  const activeUser = user ?? auth?.currentUser;
+  if (!activeUser) return { status: 'disconnected' };
 
   if (!navigator.onLine) {
     markPending();
@@ -64,7 +65,7 @@ export async function syncToRushd({ force = false } = {}) {
     const bundle = buildRushdFinanceBundle({
       rawSnapshot,
       month,
-      displayName: user.displayName,
+      displayName: activeUser.displayName,
       exportedAt,
     });
 
@@ -76,7 +77,7 @@ export async function syncToRushd({ force = false } = {}) {
     }
 
     await setDoc(
-      doc(firestore, 'users', user.uid, 'ratibiSync', bundle.month),
+      doc(firestore, 'users', activeUser.uid, 'ratibiSync', bundle.month),
       {
         sourceApp: 'ratibi',
         sourceVersion: 1,
