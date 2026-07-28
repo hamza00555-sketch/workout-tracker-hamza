@@ -83,13 +83,17 @@ export function RushdSyncProvider({ children }) {
     const u = user ?? activeUserRef.current;
     if (!u) return;
     setStatus('syncing');
-    const result = await syncToRushd({ force });
+    const result = await syncToRushd({ force, user: u });
     if (result.status === 'connected') {
       setStatus('connected');
       setError(null);
       if (result.syncedAt) setLastSyncedAt(result.syncedAt);
     } else if (result.status === 'offline') {
       setStatus('offline');
+    } else if (result.status === 'disconnected') {
+      setStatus('disconnected');
+    } else if (result.status === 'unconfigured') {
+      setStatus('unconfigured');
     } else if (result.status === 'error') {
       setStatus('error');
       setError(arabicError(result.errorKey));
