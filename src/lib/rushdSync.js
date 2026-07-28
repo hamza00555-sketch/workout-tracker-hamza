@@ -1,5 +1,4 @@
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, firestore, isFirebaseConfigured } from './firebase.js';
+import { auth, firebaseProjectId, isFirebaseConfigured } from './firebase.js';
 import * as db from '../db/index.js';
 import { buildRushdFinanceBundle, SalaryMissingError, settingsToObj } from './rushdBundle.js';
 import { currentMonth } from '../utils/format.js';
@@ -7,6 +6,99 @@ import { currentMonth } from '../utils/format.js';
 const FINGERPRINT_KEY = 'ratebi_rushd_fp';
 const PENDING_KEY = 'ratebi_rushd_pending';
 const WRITE_TIMEOUT_MS = 20000;
+
+function firestoreValue(value) {
+  if (value === null) return { nullValue: null };
+  if (Array.isArray(value)) {
+    return { arrayValue: { values: value.map(firestoreValue) } };
+  }
+  if (typeof value === 'string') return { stringValue: value };
+  if (typeof value === 'boolean') return { booleanValue: value };
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value)
+      ? { integerValue: String(value) }
+      : { doubleValue: value };
+  }
+  if (typeof value === 'object') {
+    return {
+      mapValue: {
+        fields: Object.fromEntries(
+          Object.entries(value)
+            .filter(([, nested]) => nested !== undefined)
+            .map(([key, nested]) => [key, firestoreValue(nested)]),
+        ),
+      },
+    };
+  }
+  throw new TypeError(`Unsupported Firestore value: ${typeof value}`);
+}
+
+function firestoreFields(value) {
+  return Object.fromEntries(
+    Object.entries(value).map(([key, nested]) => [key, firestoreValue(nested)]),
+  );
+}
+
+async function writeBundle(activeUser, bundle) {
+  const idToken = await activeUser.getIdToken();
+  const documentName = [
+    'projects',
+    firebaseProjectId,
+    'databases',
+    '(default)',
+    'documents',
+    'users',
+    activeUser.uid,
+    'ratibiSync',
+    bundle.month,
+  ].join('/');
+  const endpoint =
+    `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(firebaseProjectId)}` +
+    '/databases/(default)/documents:commit';
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), WRITE_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        writes: [
+          {
+            update: {
+              name: documentName,
+              fields: firestoreFields({
+                sourceApp: 'ratibi',
+                sourceVersion: 1,
+                bundle,
+              }),
+            },
+            updateTransforms: [
+              {
+                fieldPath: 'updatedAt',
+                setToServerValue: 'REQUEST_TIME',
+              },
+            ],
+          },
+        ],
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const error = new Error(`Firestore REST write failed (${response.status})`);
+      error.code = response.status === 401 || response.status === 403
+        ? 'permission-denied'
+        : 'firestore-rest-error';
+      throw error;
+    }
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
 
 async function computeFingerprint(bundle) {
   // Exclude exportedAt so identical financial data always produces the same hash
@@ -77,21 +169,7 @@ export async function syncToRushd({ force = false, user = null } = {}) {
       return { status: 'connected', noChange: true };
     }
 
-    const writePromise = setDoc(
-      doc(firestore, 'users', activeUser.uid, 'ratibiSync', bundle.month),
-      {
-        sourceApp: 'ratibi',
-        sourceVersion: 1,
-        bundle,
-        updatedAt: serverTimestamp(),
-      },
-    );
-    await Promise.race([
-      writePromise,
-      new Promise((_, reject) => {
-        window.setTimeout(() => reject(new Error('rushd-sync-timeout')), WRITE_TIMEOUT_MS);
-      }),
-    ]);
+    await writeBundle(activeUser, bundle);
 
     saveFingerprint(fp);
     clearPending();
