@@ -28,7 +28,7 @@ function arabicError(code) {
 }
 
 export function RushdSyncProvider({ children }) {
-  const { commitments, goals, banks, debts, extraIncome, monthlyRecords } = useApp();
+  const { settings, commitments, goals, banks, debts, extraIncome, monthlyRecords } = useApp();
 
   const [status, setStatus] = useState(isFirebaseConfigured ? 'disconnected' : 'unconfigured');
   const [rushdUser, setRushdUser] = useState(null);
@@ -76,12 +76,12 @@ export function RushdSyncProvider({ children }) {
     if (!user) return;
     clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => doSync(false, user), 1500);
-  }, [commitments, goals, banks, debts, extraIncome, monthlyRecords]);
+    return () => clearTimeout(debounceTimer.current);
+  }, [settings, commitments, goals, banks, debts, extraIncome, monthlyRecords]);
 
   async function doSync(force, user) {
     const u = user ?? activeUserRef.current;
     if (!u) return;
-    if (!navigator.onLine) { setStatus('offline'); return; }
     setStatus('syncing');
     const result = await syncToRushd({ force });
     if (result.status === 'connected') {
