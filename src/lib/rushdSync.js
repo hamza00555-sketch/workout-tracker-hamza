@@ -6,6 +6,7 @@ import { currentMonth } from '../utils/format.js';
 
 const FINGERPRINT_KEY = 'ratebi_rushd_fp';
 const PENDING_KEY = 'ratebi_rushd_pending';
+const WRITE_TIMEOUT_MS = 20000;
 
 async function computeFingerprint(bundle) {
   // Exclude exportedAt so identical financial data always produces the same hash
@@ -76,7 +77,7 @@ export async function syncToRushd({ force = false, user = null } = {}) {
       return { status: 'connected', noChange: true };
     }
 
-    await setDoc(
+    const writePromise = setDoc(
       doc(firestore, 'users', activeUser.uid, 'ratibiSync', bundle.month),
       {
         sourceApp: 'ratibi',
@@ -85,6 +86,12 @@ export async function syncToRushd({ force = false, user = null } = {}) {
         updatedAt: serverTimestamp(),
       },
     );
+    await Promise.race([
+      writePromise,
+      new Promise((_, reject) => {
+        window.setTimeout(() => reject(new Error('rushd-sync-timeout')), WRITE_TIMEOUT_MS);
+      }),
+    ]);
 
     saveFingerprint(fp);
     clearPending();
