@@ -49,6 +49,10 @@ if (isFirebaseConfigured) {
 
   try {
     _firestore = initializeFirestore(app, {
+      // بعض شبكات الجوال والبروكسيات تحجب قناة Firestore الافتراضية وتترك
+      // عملية الحفظ معلّقة. Long polling أكثر ثباتاً لهذا الربط المباشر.
+      experimentalForceLongPolling: true,
+      useFetchStreams: false,
       localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager(),
       }),
