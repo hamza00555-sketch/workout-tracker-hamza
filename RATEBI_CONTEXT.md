@@ -136,8 +136,60 @@ confirmSalaryDay(record)
 ## DEFAULT_SETTINGS
 
 ```js
-{ salary: 0, salaryDay: 25, currency: 'ريال', onboardingComplete: false }
+{
+  salary: 0, salaryDay: 25, currency: 'ريال',
+  onboardingComplete: false,
+  rushdWishesBudget: 0,
+  rushdWishesSpent: 0,
+}
 ```
+
+---
+
+## ربط راتبي برُشد (Firebase Integration)
+
+### ملفات جديدة
+
+| الملف | الوصف |
+|-------|-------|
+| `src/lib/firebase.js` | تهيئة Firebase (Auth + Firestore). إذا VITE vars ناقصة → exports تكون null، التطبيق يعمل offline بدون أي error |
+| `src/lib/rushdBundle.js` | بناء `RatibiFinanceBundleV1` من IndexedDB snapshot — pure ESM، بدون React/Firebase |
+| `src/lib/rushdSync.js` | يكتب الـ bundle إلى Firestore + fingerprint dedup عبر SHA-256 |
+| `src/context/RushdSyncContext.jsx` | React context يدير Auth state، auto-sync (debounced 1500ms)، reconnect sync |
+| `scripts/ratibi-rushd-bundle-test.mjs` | 25 اختبار Node.js (`npm run test:rushd-sync`) |
+| `.env.example` | VITE_FIREBASE_* keys (بدون قيم) |
+| `docs/RUSHD_INTEGRATION.md` | وثيقة الربط الكاملة |
+
+### Environment Variables المطلوبة (Vercel)
+
+```
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
+
+### Firestore Path
+
+```
+users/{uid}/ratibiSync/{yyyy-mm}
+{
+  sourceApp: 'ratibi',
+  sourceVersion: 1,
+  bundle: RatibiFinanceBundleV1,
+  updatedAt: serverTimestamp(),
+}
+```
+
+### ملاحظات مهمة
+
+- **IndexedDB هي المصدر الأساسي** — Firebase sync إضافي فقط
+- **Upstash / Webhook / MCP غير موجودة في هذا الفرع** — تلك على فرع `claude/continue-session-gCVKM`
+- **لا Service Account، لا Admin SDK، لا Cloud Functions** — Client SDK فقط
+- **كلمة المرور لا تُحفظ** في IndexedDB أو settings أو Firestore
+- **`?connect=rushd`** في URL → ينتقل تلقائياً إلى Settings ويسكرول لقسم "ربط رُشد"
 
 ---
 
