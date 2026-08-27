@@ -8,6 +8,11 @@ import {
 } from '../utils/notifications.js';
 
 
+// Injected by vite.config.js at build time — see `define`.
+const BUILD_BRANCH = typeof __BUILD_BRANCH__ !== 'undefined' ? __BUILD_BRANCH__ : 'local';
+const BUILD_COMMIT = typeof __BUILD_COMMIT__ !== 'undefined' ? __BUILD_COMMIT__ : 'dev';
+const BUILD_TIME = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : new Date().toISOString();
+
 function maskEmail(email) {
   if (!email) return '';
   const [user, domain] = email.split('@');
@@ -894,7 +899,27 @@ export default function Settings() {
           <div className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>💼</div>
             <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 4 }}>راتبي</div>
-            <div style={{ color: 'var(--text3)', fontSize: 12 }}>الإصدار 1.0 · أوفلاين كامل</div>
+            <div style={{ color: 'var(--text3)', fontSize: 12, marginBottom: 12 }}>الإصدار 1.0 · أوفلاين كامل</div>
+
+            <div style={{
+              background: 'var(--bg2)', borderRadius: 10, padding: '10px 12px',
+              display: 'flex', flexDirection: 'column', gap: 5,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--text3)', fontSize: 11 }}>الفرع</span>
+                <span className="num" style={{ color: 'var(--primary)', fontSize: 11, fontWeight: 700 }}>{BUILD_BRANCH}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--text3)', fontSize: 11 }}>النسخة</span>
+                <span className="num" style={{ color: 'var(--text2)', fontSize: 11 }}>{BUILD_COMMIT}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--text3)', fontSize: 11 }}>تاريخ البناء</span>
+                <span className="num" style={{ color: 'var(--text2)', fontSize: 11 }}>
+                  {new Date(BUILD_TIME).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })}
+                </span>
+              </div>
+            </div>
           </div>
         </section>
       </div>

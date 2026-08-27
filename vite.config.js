@@ -2,7 +2,16 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Vercel exposes the branch and commit of the build; locally there is neither.
+const BRANCH = process.env.VERCEL_GIT_COMMIT_REF || 'local'
+const COMMIT = (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || 'dev'
+
 export default defineConfig({
+  define: {
+    __BUILD_BRANCH__: JSON.stringify(BRANCH),
+    __BUILD_COMMIT__: JSON.stringify(COMMIT),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     react(),
     VitePWA({
