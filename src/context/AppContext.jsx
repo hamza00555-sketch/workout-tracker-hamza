@@ -12,6 +12,8 @@ const DEFAULT_SETTINGS = {
   onboardingComplete: false,
   cloudApiKey: '',
   webhookUrl: '',
+  rushdWishesBudget: 0,
+  rushdWishesSpent: 0,
 };
 
 export function AppProvider({ children }) {

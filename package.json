@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:rushd-sync": "node scripts/ratibi-rushd-bundle-test.mjs"
   },
   "dependencies": {
+    "firebase": "^12.16.0",
     "idb": "^8.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
