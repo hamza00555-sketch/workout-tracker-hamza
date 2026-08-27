@@ -28,7 +28,7 @@ export default function Dashboard() {
   // Bank totals (compact)
   const bankTransfers = banks.map(bank => {
     const total =
-      commitments.filter(c => c.active !== false && c.bankId === bank.id)
+      commitments.filter(c => c.active !== false && c.pausedMonth !== thisMonth && c.bankId === bank.id)
         .reduce((s, c) => s + (c.amount || 0), 0) +
       goals.filter(g => !g.completed && g.bankId === bank.id)
         .reduce((s, g) => s + (g.monthlyContribution || 0), 0);
@@ -37,7 +37,7 @@ export default function Dashboard() {
 
   // Upcoming unpaid commitments (≤7 days, max 3)
   const upcomingCommitments = commitments
-    .filter(c => c.active !== false && !c.paidThisMonth)
+    .filter(c => c.active !== false && c.pausedMonth !== thisMonth && !c.paidThisMonth)
     .map(c => ({ ...c, days: daysUntil(c.dayOfMonth || 1) }))
     .filter(c => c.days <= 7)
     .sort((a, b) => a.days - b.days)

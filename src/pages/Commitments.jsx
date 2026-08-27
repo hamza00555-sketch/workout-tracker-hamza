@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
-import { daysUntil } from '../utils/format.js';
+import { daysUntil, currentMonth } from '../utils/format.js';
 import { getCatData, COMMITMENT_CATEGORIES } from '../components/CategoryData.js';
 import BottomSheet from '../components/BottomSheet.jsx';
 import CatIcon from '../components/CategoryIcons.jsx';
@@ -15,16 +15,18 @@ export default function Commitments() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
+  const month = currentMonth();
   const enriched = commitments.map(c => ({ ...c, days: daysUntil(c.dayOfMonth || 1) }));
 
   const filtered = enriched.filter(c => {
     if (filter === 'paid') return c.paidThisMonth;
-    if (filter === 'upcoming') return !c.paidThisMonth && c.days <= 7;
+    if (filter === 'upcoming') return !c.paidThisMonth && c.pausedMonth !== month && c.days <= 7;
     return true;
   });
 
-  const total = commitments.filter(c => c.active !== false).reduce((s, c) => s + (c.amount || 0), 0);
+  const total = commitments.filter(c => c.active !== false && c.pausedMonth !== month).reduce((s, c) => s + (c.amount || 0), 0);
   const paidCount = commitments.filter(c => c.paidThisMonth).length;
+  const pausedCount = commitments.filter(c => c.pausedMonth === month).length;
 
   function openAdd() {
     setEditItem(null);
@@ -54,10 +56,16 @@ export default function Commitments() {
   }
 
   async function togglePaid(c) {
+    if (c.pausedMonth === month) return;
     await updateCommitment({ ...c, paidThisMonth: !c.paidThisMonth });
   }
 
+  async function togglePause(c) {
+    await updateCommitment({ ...c, pausedMonth: c.pausedMonth === month ? null : month });
+  }
+
   function getBadge(c) {
+    if (c.pausedMonth === month) return { label: 'موقف هذا الشهر', cls: 'badge-yellow' };
     if (c.paidThisMonth) return { label: 'مدفوع ✓', cls: 'badge-green' };
     if (c.days === 0) return { label: 'اليوم!', cls: 'badge-red' };
     if (c.days <= 7) return { label: <>بعد <span className="num">{c.days}</span> أيام</>, cls: c.days <= 3 ? 'badge-red' : 'badge-yellow' };
@@ -75,6 +83,11 @@ export default function Commitments() {
             <h1 style={{ fontSize: 22, fontWeight: 900 }}>التزاماتي</h1>
             <p style={{ color: 'var(--text2)', fontSize: 13 }}>
               <span className="num">{paidCount}</span> / <span className="num">{commitments.length}</span> مدفوع
+              {pausedCount > 0 && (
+                <span style={{ color: 'var(--gold)', marginRight: 8 }}>
+                  · <span className="num">{pausedCount}</span> موقف
+                </span>
+              )}
             </p>
           </div>
           <div style={{ textAlign: 'left' }}>
@@ -108,7 +121,7 @@ export default function Commitments() {
             const assignedAccount = assignedBank?.accounts.find(a => a.id === c.accountId);
             return (
               <div key={c.id} className="anim-fadeup">
-                <div className="list-item" style={{ opacity: c.paidThisMonth ? 0.7 : 1, cursor: 'pointer' }} onClick={() => togglePaid(c)}>
+                <div className="list-item" style={{ opacity: c.pausedMonth === month ? 0.55 : c.paidThisMonth ? 0.7 : 1, cursor: 'pointer' }} onClick={() => togglePaid(c)}>
                   <div className="cat-icon" style={{ background: cat.bg }}><CatIcon id={cat.id} /></div>
                   <div className="list-item-info">
                     <div className="list-item-name" style={{ textDecoration: c.paidThisMonth ? 'line-through' : 'none' }}>
@@ -136,10 +149,17 @@ export default function Commitments() {
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={e => { e.stopPropagation(); togglePaid(c); }} style={{
                         background: c.paidThisMonth ? 'var(--accent-dim)' : 'var(--card2)',
-                        border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
+                        border: 'none', borderRadius: 8, width: 32, height: 32, cursor: c.pausedMonth === month ? 'not-allowed' : 'pointer',
                         color: c.paidThisMonth ? 'var(--accent)' : 'var(--text2)', fontSize: 16,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        opacity: c.pausedMonth === month ? 0.4 : 1,
                       }}>✓</button>
+                      <button onClick={e => { e.stopPropagation(); togglePause(c); }} style={{
+                        background: c.pausedMonth === month ? 'var(--gold-dim)' : 'var(--card2)',
+                        border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
+                        color: c.pausedMonth === month ? 'var(--gold)' : 'var(--text2)', fontSize: 15,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>⏸</button>
                       <button onClick={e => { e.stopPropagation(); openEdit(c); }} className="btn-icon" style={{ color: 'var(--text2)', fontSize: 14 }}>✎</button>
                     </div>
                   </div>
