@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { uid } from '../utils/format.js';
+import { isCommitmentDue } from '../utils/calc.js';
 import BottomSheet from '../components/BottomSheet.jsx';
 
 const BANK_EMOJIS = ['🏦', '🏧', '💳', '💰', '💵', '📊', '🏛️', '🌱', '🛡️', '📈', '🏠', '🚗'];
@@ -187,7 +188,7 @@ function BankCard({ bank, commitments, goals, onEdit }) {
       {/* Accounts with assigned commitments/goals */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {bank.accounts.map(acc => {
-          const accCommitments = commitments.filter(c => c.bankId === bank.id && c.accountId === acc.id);
+          const accCommitments = commitments.filter(c => isCommitmentDue(c) && c.bankId === bank.id && c.accountId === acc.id);
           const accGoals = goals.filter(g => g.bankId === bank.id && g.accountId === acc.id);
           const hasAssigned = accCommitments.length > 0 || accGoals.length > 0;
 

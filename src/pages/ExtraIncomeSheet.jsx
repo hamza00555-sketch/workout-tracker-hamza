@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext.jsx';
 import { uid, todayISO } from '../utils/format.js';
+import { isCommitmentDue } from '../utils/calc.js';
 
 const SOURCES = [
   { id: 'bonus', label: 'مكافأة', icon: '🎁' },
@@ -41,7 +42,7 @@ export default function ExtraIncomeSheet({ onClose }) {
 
   const activeDebts = debts.filter(d => !d.paid);
   // Only tagged items receive a portion from extra income
-  const taggedCommitments = commitments.filter(c => c.active !== false && c.extraIncomeTag);
+  const taggedCommitments = commitments.filter(c => isCommitmentDue(c) && c.extraIncomeTag);
   const taggedGoals = goals.filter(g => !g.completed && g.extraIncomeTag);
   const taggedItems = [...taggedCommitments.map(c => ({ ...c, _type: 'commitment', _amount: c.amount || 0 })),
                        ...taggedGoals.map(g => ({ ...g, _type: 'goal', _amount: g.monthlyContribution || 0 }))];

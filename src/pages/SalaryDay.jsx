@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { currentMonth } from '../utils/format.js';
-import { calcCommitmentsTotal, calcGoalsMonthlyTotal, calcRemaining } from '../utils/calc.js';
+import { calcCommitmentsTotal, calcGoalsMonthlyTotal, calcRemaining, isCommitmentDue } from '../utils/calc.js';
 import { getCatData, COMMITMENT_CATEGORIES, GOAL_CATEGORIES } from '../components/CategoryData.js';
 import CatIcon from '../components/CategoryIcons.jsx';
 
@@ -13,7 +13,7 @@ export default function SalaryDay() {
   );
 
   const month = currentMonth();
-  const activeCommitments = commitments.filter(c => c.active !== false);
+  const activeCommitments = commitments.filter(c => isCommitmentDue(c, month));
   const activeGoals = goals.filter(g => !g.completed);
 
   const commitmentsTotal = useMemo(() => calcCommitmentsTotal(activeCommitments), [activeCommitments]);

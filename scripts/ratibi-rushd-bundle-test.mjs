@@ -103,6 +103,40 @@ test('obligations: active !== false only', () => {
   assert.equal(bundle.obligations[0].id, 'c1');
 });
 
+test('obligations: paused for this month is excluded', () => {
+  const snap = baseSnapshot({
+    commitments: [
+      { id: 'c1', name: 'إيجار', amount: 2000, dayOfMonth: 1, active: true, paidThisMonth: false },
+      { id: 'c2', name: 'موقف', amount: 700, dayOfMonth: 5, active: true, paidThisMonth: false, pausedMonth: MONTH },
+    ],
+  });
+  const bundle = buildRushdFinanceBundle({ rawSnapshot: snap, month: MONTH, displayName: null, exportedAt: EXPORTED_AT });
+  assert.equal(bundle.obligations.length, 1);
+  assert.equal(bundle.obligations[0].id, 'c1');
+});
+
+test('obligations: paused for a different month still counts', () => {
+  const snap = baseSnapshot({
+    commitments: [
+      { id: 'c1', name: 'إيجار', amount: 2000, dayOfMonth: 1, active: true, paidThisMonth: false, pausedMonth: '2026-01' },
+    ],
+  });
+  const bundle = buildRushdFinanceBundle({ rawSnapshot: snap, month: MONTH, displayName: null, exportedAt: EXPORTED_AT });
+  assert.equal(bundle.obligations.length, 1);
+});
+
+test('budgets: paused commitment is not deducted from flexible limit', () => {
+  const snap = baseSnapshot({
+    commitments: [
+      { id: 'c1', name: 'إيجار', amount: 3000, dayOfMonth: 1, active: true, paidThisMonth: false },
+      { id: 'c2', name: 'موقف', amount: 1000, dayOfMonth: 5, active: true, paidThisMonth: false, pausedMonth: MONTH },
+    ],
+  });
+  const bundle = buildRushdFinanceBundle({ rawSnapshot: snap, month: MONTH, displayName: null, exportedAt: EXPORTED_AT });
+  const flex = bundle.budgets.find(b => b.id === 'flexible');
+  assert.equal(flex.limit, 7000); // 10000 - 3000، والموقوف لا يُخصم
+});
+
 // 5. paidThisMonth → paidAmount
 test('obligations: paidThisMonth=true → paidAmount equals amount', () => {
   const snap = baseSnapshot({
