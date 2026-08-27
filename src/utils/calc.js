@@ -1,3 +1,5 @@
+import { currentMonth } from './format.js';
+
 export function monthsUntil(targetDate) {
   const now = new Date();
   const t = new Date(targetDate);
@@ -15,8 +17,11 @@ export function calcGoalProgress(goal) {
   return Math.min(100, Math.round(((goal.savedAmount || 0) / goal.targetAmount) * 100));
 }
 
-export function calcCommitmentsTotal(commitments) {
-  return commitments.filter(c => c.active !== false).reduce((s, c) => s + (c.amount || 0), 0);
+export function calcCommitmentsTotal(commitments, month) {
+  const m = month ?? currentMonth();
+  return commitments
+    .filter(c => c.active !== false && c.pausedMonth !== m)
+    .reduce((s, c) => s + (c.amount || 0), 0);
 }
 
 export function calcGoalsMonthlyTotal(goals) {
