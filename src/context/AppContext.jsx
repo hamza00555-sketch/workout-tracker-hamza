@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import * as db from '../db/index.js';
 import { currentMonth, uid, todayISO, monthFromDate, formatAmount } from '../utils/format.js';
 import { calcGoalMonthly } from '../utils/calc.js';
@@ -10,6 +10,8 @@ export const useApp = () => useContext(AppContext);
 const DEFAULT_SETTINGS = {
   salary: 0, salaryDay: 25, currency: 'ريال',
   onboardingComplete: false,
+  cloudApiKey: '',
+  webhookUrl: '',
   rushdWishesBudget: 0,
   rushdWishesSpent: 0,
 };
@@ -26,6 +28,12 @@ export function AppProvider({ children }) {
   const [page, setPage] = useState('loading');
   const [privacyMode, setPrivacyMode] = useState(false);
   const [locked, setLocked] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle' | 'syncing' | 'ok' | 'error'
+  const [lastSynced, setLastSynced] = useState(null);
+
+  const syncTimer = useRef(null);
+  const apiKeyRef = useRef(null);
+  const hasMounted = useRef(false);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -73,6 +81,52 @@ export function AppProvider({ children }) {
     }
     setLoading(false);
   }
+
+  useEffect(() => { apiKeyRef.current = settings.cloudApiKey || null; }, [settings.cloudApiKey]);
+
+  const scheduleSync = useCallback(() => {
+    clearTimeout(syncTimer.current);
+    syncTimer.current = setTimeout(async () => {
+      if (!navigator.onLine || !apiKeyRef.current) return;
+      setSyncStatus('syncing');
+      try {
+        const snapshot = await db.exportAll();
+        const res = await fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKeyRef.current },
+          body: JSON.stringify(snapshot),
+        });
+        if (res.ok) {
+          const { syncedAt } = await res.json();
+          setSyncStatus('ok');
+          setLastSynced(syncedAt);
+        } else {
+          setSyncStatus('error');
+        }
+      } catch {
+        setSyncStatus('error');
+      }
+    }, 2000);
+  }, []);
+
+  useEffect(() => {
+    if (!hasMounted.current) { hasMounted.current = true; return; }
+    scheduleSync();
+  }, [commitments, goals, banks, debts, extraIncome, monthlyRecords, scheduleSync]);
+
+  const pullFromCloud = useCallback(async () => {
+    if (!apiKeyRef.current) return { ok: false, error: 'no-key' };
+    try {
+      const res = await fetch('/api/data', { headers: { 'x-api-key': apiKeyRef.current } });
+      if (!res.ok) return { ok: false, error: res.status === 404 ? 'no-data' : 'server-error' };
+      const data = await res.json();
+      await db.importAll(data);
+      await loadAll();
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'network' };
+    }
+  }, []);
 
   const updateSettings = useCallback(async (updates) => {
     const next = { ...settings, ...updates };
@@ -209,6 +263,7 @@ export function AppProvider({ children }) {
       page, setPage, currentMonthRecord,
       privacyMode, togglePrivacy, fmt,
       locked, unlock,
+      syncStatus, lastSynced, scheduleSync, pullFromCloud,
       updateSettings, addCommitment, updateCommitment, deleteCommitment,
       addGoal, updateGoal, deleteGoal, addGoalAmount,
       addBank, updateBank, deleteBank,
