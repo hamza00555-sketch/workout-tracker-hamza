@@ -209,27 +209,87 @@ export default function Settings() {
 
   const [updateStatus, setUpdateStatus] = useState('idle'); // idle | checking | updating | current | error
 
+  const updateTimer = useRef(null);
+  useEffect(() => () => clearTimeout(updateTimer.current), []);
+
+  // Last resort: drop every cached asset and the SW itself, then reload from
+  // the network. IndexedDB is untouched — only app code lives in these caches.
+  async function forceRefresh() {
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      }
+    } catch { /* clearing is best-effort — reload regardless */ }
+    window.location.replace(`${window.location.pathname}?v=${Date.now()}`);
+  }
+
+  // The SW calls skipWaiting + clients.claim, so activating a new worker fires
+  // controllerchange and App.jsx reloads. If that chain stalls, force it.
+  function armFallback() {
+    clearTimeout(updateTimer.current);
+    updateTimer.current = setTimeout(forceRefresh, 6000);
+  }
+
+  function activate(sw) {
+    if (!sw) return;
+    sw.postMessage({ type: 'SKIP_WAITING' });
+    sw.addEventListener('statechange', () => {
+      if (sw.state === 'installed' || sw.state === 'activated') {
+        sw.postMessage({ type: 'SKIP_WAITING' });
+      }
+    });
+  }
+
   async function handleAppUpdate() {
     setUpdateStatus('checking');
     try {
-      if (!('serviceWorker' in navigator)) { window.location.reload(); return; }
-      const reg = await navigator.serviceWorker.getRegistration('/');
-      if (!reg) { window.location.reload(); return; }
+      if (!('serviceWorker' in navigator)) { forceRefresh(); return; }
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) { forceRefresh(); return; }
 
-      // Ask the browser to fetch the SW file and compare.
-      // If a new SW is found it installs → self.skipWaiting activates it →
-      // clients.claim takes control → controllerchange fires →
-      // the always-active listener in App.jsx reloads the page automatically.
-      await reg.update();
-
-      if (reg.installing) {
-        // New SW is downloading/installing — App.jsx will reload when ready
+      // A new version may already be downloaded and parked in `waiting` —
+      // the common "stuck on the old build" case. Activate it immediately.
+      if (reg.waiting) {
         setUpdateStatus('updating');
-      } else {
-        // No new version on the server
-        setUpdateStatus('current');
-        setTimeout(() => setUpdateStatus('idle'), 3000);
+        activate(reg.waiting);
+        armFallback();
+        return;
       }
+
+      // A worker can appear at any point during the check, so watch for it
+      // instead of sampling reg.installing once after update() resolves.
+      let found = false;
+      const onUpdateFound = () => {
+        const sw = reg.installing || reg.waiting;
+        if (!sw) return;
+        found = true;
+        setUpdateStatus('updating');
+        activate(sw);
+        armFallback();
+      };
+      reg.addEventListener('updatefound', onUpdateFound);
+
+      // update() rejects on flaky networks and under browser throttling —
+      // that is not a failure of the whole flow, so keep going either way.
+      try { await reg.update(); } catch { /* fall through to the state check */ }
+
+      await new Promise(r => setTimeout(r, 1500));
+      reg.removeEventListener('updatefound', onUpdateFound);
+
+      if (found || reg.installing || reg.waiting) {
+        setUpdateStatus('updating');
+        activate(reg.waiting || reg.installing);
+        armFallback();
+        return;
+      }
+
+      setUpdateStatus('current');
+      setTimeout(() => setUpdateStatus('idle'), 3000);
     } catch {
       setUpdateStatus('error');
       setTimeout(() => setUpdateStatus('idle'), 3000);
@@ -811,6 +871,21 @@ export default function Settings() {
               {updateStatus === 'current' && '✓ التطبيق محدّث بالفعل'}
               {updateStatus === 'error' && '⚠️ حدث خطأ، حاول مجدداً'}
             </button>
+
+            <button
+              onClick={forceRefresh}
+              style={{
+                padding: '12px', borderRadius: 12, cursor: 'pointer',
+                fontFamily: 'Mestika, Cairo, sans-serif', fontWeight: 700, fontSize: 14,
+                background: 'transparent', color: 'var(--text2)',
+                border: '1.5px solid var(--border)',
+              }}
+            >
+              🧹 مسح الذاكرة المؤقتة وإعادة التحميل
+            </button>
+            <p style={{ color: 'var(--text3)', fontSize: 11, lineHeight: 1.7, textAlign: 'center' }}>
+              استخدمه إذا بقي التطبيق على النسخة القديمة. بياناتك محفوظة ولن تُمس.
+            </p>
           </div>
         </section>
 
