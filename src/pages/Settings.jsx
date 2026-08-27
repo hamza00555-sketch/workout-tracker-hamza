@@ -326,7 +326,10 @@ export default function Settings() {
       const text = await file.text();
       const data = JSON.parse(text);
       await db.importAll(data);
-      window.location.reload();
+      // A plain reload() is a navigation the service worker answers from cache,
+      // which drops the user back onto whatever build was precached. Bust it so
+      // the restored data lands on the current version.
+      window.location.replace(`${window.location.pathname}?restored=${Date.now()}`);
     } catch {
       setBackupError('الملف غير صالح أو تالف');
     }

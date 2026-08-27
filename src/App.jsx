@@ -69,6 +69,36 @@ export default function App() {
     return () => navigator.serviceWorker.removeEventListener('controllerchange', reload);
   }, []);
 
+  // Listening for controllerchange is not enough: a downloaded worker parked in
+  // `waiting` never activates on its own, so the event never fires and the app
+  // stays pinned to the old build forever. Kick the check on every launch and
+  // release anything already waiting.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    let cancelled = false;
+
+    async function syncWorker() {
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (!reg || cancelled) return;
+        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        reg.addEventListener('updatefound', () => {
+          const sw = reg.installing;
+          if (!sw) return;
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'installed') sw.postMessage({ type: 'SKIP_WAITING' });
+          });
+        });
+        await reg.update();
+      } catch { /* throttled or offline — the next launch tries again */ }
+    }
+
+    syncWorker();
+    const onShow = () => { if (document.visibilityState === 'visible') syncWorker(); };
+    document.addEventListener('visibilitychange', onShow);
+    return () => { cancelled = true; document.removeEventListener('visibilitychange', onShow); };
+  }, []);
+
   return (
     <AppProvider>
       <RushdSyncProvider>
