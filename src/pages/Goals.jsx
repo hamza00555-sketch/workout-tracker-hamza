@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { calcGoalProgress, calcGoalMonthly, monthsUntil } from '../utils/calc.js';
+import { monthsRemaining } from '../utils/format.js';
 import { getCatData, GOAL_CATEGORIES } from '../components/CategoryData.js';
 import BottomSheet from '../components/BottomSheet.jsx';
 import SavingsCalc from './SavingsCalc.jsx';
@@ -292,6 +293,16 @@ function GoalCard({ goal, banks, onEdit, onClick, onAdd, completed }) {
   const assignedBank = goal.bankId ? banks.find(b => b.id === goal.bankId) : null;
   const assignedAccount = assignedBank?.accounts.find(a => a.id === goal.accountId);
 
+  // Reuses the month names the form's picker shows, so the card reads back
+  // exactly what was chosen there.
+  const due = goal.targetDate ? (() => {
+    const [y, m] = goal.targetDate.split('-');
+    return `${ARABIC_MONTHS[Number(m) - 1]} ${y}`;
+  })() : null;
+  const left = goal.targetDate ? monthsRemaining(goal.targetDate) : null;
+  const overdue = !completed && left !== null && left < 0;
+  const soon = !completed && left !== null && left >= 0 && left <= 2;
+
   return (
     <div className="card anim-fadeup" style={{ opacity: completed ? 0.7 : 1, cursor: 'pointer' }} onClick={onClick}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
@@ -302,6 +313,15 @@ function GoalCard({ goal, banks, onEdit, onClick, onAdd, completed }) {
             <span className="num">{fmt(goal.savedAmount || 0)}</span> / <span className="num">{fmt(goal.targetAmount)}</span> ريال
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+            {due && (
+              <span style={{
+                fontSize: 11, padding: '2px 7px', borderRadius: 6, fontWeight: 600,
+                background: overdue ? 'var(--danger-dim)' : soon ? 'var(--gold-dim)' : 'var(--primary-dim)',
+                color: overdue ? 'var(--danger)' : soon ? 'var(--gold)' : 'var(--primary)',
+              }}>
+                📅 {due}{overdue ? ' · متأخر' : ''}
+              </span>
+            )}
             {goal.extraIncomeTag && (
               <span style={{ fontSize: 11, padding: '2px 7px', borderRadius: 6, background: '#F59E0B18', color: '#F59E0B', fontWeight: 700 }}>💰 دخل إضافي</span>
             )}
@@ -331,7 +351,10 @@ function GoalCard({ goal, banks, onEdit, onClick, onAdd, completed }) {
         <div style={{ fontSize: 12, color: 'var(--text2)' }}>
           {goal.monthlyContribution > 0 && !completed && (
             <span>
-              <span className="num">{fmt(goal.monthlyContribution)}</span> ريال / شهر · <span className="num">{months}</span> شهر متبقي
+              <span className="num">{fmt(goal.monthlyContribution)}</span> ريال / شهر
+              {overdue
+                ? <span style={{ color: 'var(--danger)' }}> · تجاوز الموعد</span>
+                : <> · <span className="num">{months}</span> شهر متبقي</>}
             </span>
           )}
         </div>

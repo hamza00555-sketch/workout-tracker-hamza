@@ -18,6 +18,14 @@ export function formatDate(d) {
   return new Date(d).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' });
 }
 
+// Negative when the date has already passed; monthsUntil() clamps to 1 and so
+// cannot tell an overdue goal from one due next month.
+export function monthsRemaining(targetDate) {
+  const now = new Date();
+  const t = new Date(targetDate);
+  return (t.getFullYear() - now.getFullYear()) * 12 + (t.getMonth() - now.getMonth());
+}
+
 export function todayISO() {
   return new Date().toISOString().split('T')[0];
 }
