@@ -102,9 +102,9 @@ export function buildRushdFinanceBundle({ rawSnapshot, month, displayName, expor
       amount: safeNum(e.amount),
     }));
 
-  // ── Obligations (active commitments) ─────────────────────────────────────
+  // ── Obligations (active commitments, minus any paused for this month) ────
   const obligations = (rawSnapshot.commitments ?? [])
-    .filter(c => isValidId(c.id) && c.active !== false)
+    .filter(c => isValidId(c.id) && c.active !== false && c.pausedMonth !== month)
     .slice(0, 200)
     .map(c => {
       const amount = safeNum(c.amount);

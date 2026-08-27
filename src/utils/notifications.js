@@ -51,8 +51,11 @@ export function checkCommitmentsAndNotify(commitments) {
   const notifiedKey = `ratebi-notified-${new Date().toISOString().split('T')[0]}`;
   const notified = new Set(JSON.parse(localStorage.getItem(notifiedKey) || '[]'));
 
+  const thisMonth = new Date().toISOString().slice(0, 7);
+
   for (const c of commitments) {
     if (c.active === false) continue;
+    if (c.pausedMonth === thisMonth) continue;
     const day = Number(c.dayOfMonth);
     const key = `${c.id}-${day === today ? 'today' : 'tomorrow'}`;
     if (notified.has(key)) continue;

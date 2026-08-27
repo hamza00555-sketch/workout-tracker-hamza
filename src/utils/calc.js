@@ -17,10 +17,17 @@ export function calcGoalProgress(goal) {
   return Math.min(100, Math.round(((goal.savedAmount || 0) / goal.targetAmount) * 100));
 }
 
-export function calcCommitmentsTotal(commitments, month) {
+// A commitment counts this month unless it was archived outright, or paused
+// for this specific month. `pausedMonth` holds a 'yyyy-mm' string, so it stops
+// matching on its own once the month rolls over — no cleanup needed.
+export function isCommitmentDue(c, month) {
   const m = month ?? currentMonth();
+  return c.active !== false && c.pausedMonth !== m;
+}
+
+export function calcCommitmentsTotal(commitments, month) {
   return commitments
-    .filter(c => c.active !== false && c.pausedMonth !== m)
+    .filter(c => isCommitmentDue(c, month))
     .reduce((s, c) => s + (c.amount || 0), 0);
 }
 

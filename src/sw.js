@@ -56,8 +56,11 @@ async function handlePeriodicSync() {
     const today = new Date().getDate();
     const tomorrow = today + 1;
 
+    const thisMonth = new Date().toISOString().slice(0, 7);
+
     for (const c of commitments) {
       if (c.active === false) continue;
+      if (c.pausedMonth === thisMonth) continue;
       if (Number(c.dayOfMonth) === today) {
         await self.registration.showNotification('تذكير: التزام مستحق اليوم 📅', {
           body: `${c.name} — ${c.amount} ريال`,
