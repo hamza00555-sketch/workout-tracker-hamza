@@ -211,6 +211,35 @@ test('اليوم يتقدّم على القادم ثم غير المخصص', () 
   assert.equal(getNextAction({ commitments: [commitments[1]], record, settings, today: at('2026-08-20') }).key, 'due-soon');
 });
 
+// ── every rendered title must be safe for a font with no digit glyphs ────────
+console.log('\nالأرقام داخل النصوص');
+function wrapped(text) {
+  return text.split(/(\d[\d,.]*)/g).filter(p => /^\d/.test(p));
+}
+test('عناوين الخطوة التالية لا تترك رقماً خارج .num', () => {
+  // Mestika renders no digits, so any numeral baked into a title string has to
+  // be split out and wrapped by the view. This asserts the splitter catches the
+  // numbers the rules actually produce.
+  const commitments = [{ id: 'c1', name: 'اشتراكات', amount: 258, dayOfMonth: 22, active: true }];
+  const a = getNextAction({ commitments, record, settings, today: at('2026-08-19') });
+  assert.equal(a.key, 'due-soon');
+  assert.ok(/\d/.test(a.title), 'هذا العنوان يحتوي رقماً');
+  assert.deepEqual(wrapped(a.title), ['3'], 'الرقم يجب أن يُستخرج ليُلفّ');
+});
+test('عنوان بعدة التزامات يستخرج عدده', () => {
+  const commitments = [
+    { id: 'c1', name: 'أ', amount: 1, dayOfMonth: 20, active: true },
+    { id: 'c2', name: 'ب', amount: 1, dayOfMonth: 20, active: true },
+  ];
+  const a = getNextAction({ commitments, record, settings, today: at('2026-08-20') });
+  assert.deepEqual(wrapped(a.title), ['2']);
+});
+test('العناوين بلا أرقام تمرّ كما هي', () => {
+  const a = getNextAction({ record, settings, today: at('2026-08-28') });
+  assert.equal(a.key, 'undistributed');
+  assert.deepEqual(wrapped(a.title), [], 'لا رقم في هذا العنوان — المبلغ يُعرض منفصلاً');
+});
+
 console.log('');
 console.log(`Results: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

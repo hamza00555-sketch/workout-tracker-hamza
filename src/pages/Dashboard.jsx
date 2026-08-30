@@ -28,7 +28,9 @@ export default function Dashboard() {
     fmt, deleteExtraIncome, updateSettings,
   } = useApp();
   const [showIncomeSheet, setShowIncomeSheet] = useState(false);
-  const [showSummary, setShowSummary] = useState(false);
+  // Open by default: collapsing it out of the gate made the dashboard read as
+  // though data had gone missing. The choice is remembered per user.
+  const [showSummary, setShowSummary] = useState(settings.dashboardSummaryOpen !== false);
 
   const record = currentMonthRecord;
   const thisMonth = currentMonth();
@@ -47,6 +49,12 @@ export default function Dashboard() {
     () => getNextAction({ commitments, goals, settings, record, dismissed }),
     [commitments, goals, settings, record, dismissed],
   );
+
+  function toggleSummary() {
+    const next = !showSummary;
+    setShowSummary(next);
+    updateSettings({ dashboardSummaryOpen: next });
+  }
 
   async function dismissAction() {
     const next = [...dismissed, { key: action.key, sig: action.sig }].slice(-DISMISS_LIMIT);
@@ -139,7 +147,7 @@ export default function Dashboard() {
             </div>
 
             <h2 id="next-action-title" style={{ fontSize: 19, fontWeight: 800, lineHeight: 1.45 }}>
-              {action.title}
+              {withDigits(action.title)}
             </h2>
 
             {typeof action.detail === 'number' ? (
@@ -246,7 +254,7 @@ export default function Dashboard() {
         {/* ── Tier 4: everything else, folded away ── */}
         <section style={{ marginBottom: 8 }}>
           <button
-            onClick={() => setShowSummary(v => !v)}
+            onClick={toggleSummary}
             aria-expanded={showSummary}
             style={{
               width: '100%', background: 'transparent', border: 'none', cursor: 'pointer',
@@ -435,6 +443,18 @@ export default function Dashboard() {
 
 // ─── Helper Components ───────────────────────────────────────────────────────
 
+// Mestika ships no digit glyphs, so any numeral sitting in body text renders
+// blank. Numbers built into a sentence (".. بعد 3 أيام") can't be hand-wrapped
+// at the call site, so split the digit runs out and wrap them here.
+function withDigits(text) {
+  if (typeof text !== 'string') return text;
+  return text
+    .split(/(\d[\d,.]*)/g)
+    .map((part, i) => (/^\d/.test(part)
+      ? <span key={i} className="num">{part}</span>
+      : part));
+}
+
 function StripDivider() {
   return <div style={{ width: 1, background: 'var(--border)', flexShrink: 0 }} aria-hidden="true" />;
 }
@@ -484,7 +504,7 @@ function ActionRow({ title, sub, amount, urgent, divider, fmt }) {
             color: urgent ? 'var(--danger)' : 'var(--text2)',
             fontWeight: urgent ? 700 : 400,
           }}>
-            {urgent && <span aria-hidden="true">● </span>}{sub}
+            {urgent && <span aria-hidden="true">● </span>}{withDigits(sub)}
           </div>
         </div>
         <div style={{ textAlign: 'left', flexShrink: 0 }}>
