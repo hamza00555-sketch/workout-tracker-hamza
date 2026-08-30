@@ -31,8 +31,22 @@ export function calcCommitmentsTotal(commitments, month) {
     .reduce((s, c) => s + (c.amount || 0), 0);
 }
 
-export function calcGoalsMonthlyTotal(goals) {
-  return goals.filter(g => !g.completed).reduce((s, g) => s + (g.monthlyContribution || 0), 0);
+// Salary Day edits are scoped to the month they were made in: they live on the
+// monthly record and must never overwrite the goal's standing contribution.
+// Reading through here is what makes those edits visible everywhere else.
+export function goalContribFor(goal, record) {
+  const scoped = record?.goalContribs?.[goal.id];
+  // Guard before coercing: Number(null) and Number('') are both 0, which would
+  // silently read a missing entry as a deliberate zero contribution.
+  if (scoped === null || scoped === undefined || scoped === '') {
+    return goal.monthlyContribution || 0;
+  }
+  const n = Number(scoped);
+  return Number.isFinite(n) ? n : (goal.monthlyContribution || 0);
+}
+
+export function calcGoalsMonthlyTotal(goals, record) {
+  return goals.filter(g => !g.completed).reduce((s, g) => s + goalContribFor(g, record), 0);
 }
 
 export function calcRemaining(salary, commitmentsTotal, goalsTotal) {
