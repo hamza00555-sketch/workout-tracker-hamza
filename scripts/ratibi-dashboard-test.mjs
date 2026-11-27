@@ -258,9 +258,17 @@ const bankGoals = [
 ];
 const ACCOUNTS = ['a-emg', 'a-trv', 'a-res', 'a-main', 'a-shop'];
 
-test('الهدف المكتمل لا يُحتسب ضمن تحويلات البنك', () => {
+test('الهدف المكتمل يُحتسب — الخريطة تعرض كل ما هو معيَّن', () => {
+  // Reported from the app: Banks listed rows totalling 5,700 while the
+  // dashboard said 4,500. The owner's call is that the bank view maps every
+  // assignment, so the completed goal counts and 5,700 is the right figure.
   const t = bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, month: '2026-11' }).total;
-  assert.equal(t, 4500, '1000+1000+1500 التزامات + 1000 هدف مفتوح — بلا الهدف المكتمل');
+  assert.equal(t, 5700, '3500 التزامات + 1200 هدف مكتمل + 0 + 1000 هدف مفتوح');
+});
+test('الالتزام الموقوف يبقى مستثنى — أُطفئ صراحةً', () => {
+  const paused = bankCommitments.map(c => c.id === 'c3' ? { ...c, pausedMonth: '2026-11' } : c);
+  const t = bankAllocation(BANK, { commitments: paused, goals: bankGoals, month: '2026-11' }).total;
+  assert.equal(t, 4200, 'يسقط 1500 الموقوف فقط');
 });
 test('مجموع الحسابات يساوي مجموع البنك بالضبط', () => {
   const bankTotal = bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, month: '2026-11' }).total;
@@ -268,17 +276,12 @@ test('مجموع الحسابات يساوي مجموع البنك بالضبط'
     s + bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, month: '2026-11', accountId }).total, 0);
   assert.equal(sumOfAccounts, bankTotal, 'الشاشتان يجب ألا تختلفا أبداً');
 });
-test('الالتزام الموقوف يسقط من الشاشتين معاً', () => {
-  const paused = bankCommitments.map(c => c.id === 'c3' ? { ...c, pausedMonth: '2026-11' } : c);
-  const t = bankAllocation(BANK, { commitments: paused, goals: bankGoals, month: '2026-11' }).total;
-  assert.equal(t, 3000);
-});
 test('تعديل مساهمة الشهر ينعكس على تحويلات البنك', () => {
   // Salary Day edits live on the record; the bank view must follow them without
   // the goal itself being rewritten.
   const rec = { goalContribs: { 'g-debt': 250 } };
   const t = bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, record: rec, month: '2026-11' }).total;
-  assert.equal(t, 3750, '1000 صارت 250 لهذا الشهر فقط');
+  assert.equal(t, 4950, '1000 صارت 250 لهذا الشهر فقط');
 });
 test('حساب بلا تعيينات يرجّع صفراً', () => {
   const r = bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, month: '2026-11', accountId: 'nope' });

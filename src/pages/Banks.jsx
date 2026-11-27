@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { uid } from '../utils/format.js';
-import { bankAllocation } from '../utils/calc.js';
+import { bankAllocation, goalContribFor } from '../utils/calc.js';
 import BottomSheet from '../components/BottomSheet.jsx';
 
 const BANK_EMOJIS = ['🏦', '🏧', '💳', '💰', '💵', '📊', '🏛️', '🌱', '🛡️', '📈', '🏠', '🚗'];
@@ -213,9 +213,17 @@ function BankCard({ bank, commitments, goals, onEdit }) {
               {accGoals.map(g => (
                 <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <span style={{ fontSize: 13 }}>🎯</span>
-                  <span style={{ flex: 1, fontSize: 12, color: 'var(--text2)' }}>{g.name}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>
-                    <span className="num">{fmt(g.monthlyContribution || 0)}</span> ريال/شهر
+                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text2)', minWidth: 0 }}>
+                    {g.name}
+                    {/* It still counts toward the total, so say why it looks done. */}
+                    {g.completed && (
+                      <span style={{
+                        fontSize: 12, fontWeight: 700, color: 'var(--accent)', marginRight: 6,
+                      }}>✓ مكتمل</span>
+                    )}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary-text)', flexShrink: 0 }}>
+                    <span className="num">{fmt(goalContribFor(g, currentMonthRecord))}</span> ريال/شهر
                   </span>
                 </div>
               ))}

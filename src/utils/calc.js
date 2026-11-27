@@ -49,21 +49,24 @@ export function calcGoalsMonthlyTotal(goals, record) {
   return goals.filter(g => !g.completed).reduce((s, g) => s + goalContribFor(g, record), 0);
 }
 
-// Everything earmarked for a bank (or one of its accounts) this month: due
-// commitments plus this month's contributions to still-open goals.
+// Everything earmarked for a bank (or one of its accounts) this month.
 //
-// The dashboard and the Banks page each used to compute this inline and had
-// drifted apart — Banks counted completed goals the dashboard excluded, so the
-// two screens disagreed about the same bank. Both read it from here now.
+// This is a map of where money is assigned, not a filtered to-do list, so a
+// goal that already hit its target still counts while it carries a monthly
+// contribution — the account is still its destination. Paused and archived
+// commitments are the one exclusion: those were explicitly switched off.
+//
+// The dashboard and the Banks page used to compute this inline and had drifted
+// apart, reporting different figures for the same bank. Both read it here now.
 export function bankAllocation(bankId, { commitments = [], goals = [], record = null, month, accountId } = {}) {
   const m = month ?? currentMonth();
   const mine = x => x.bankId === bankId && (accountId === undefined || x.accountId === accountId);
   const dueCommitments = commitments.filter(c => isCommitmentDue(c, m) && mine(c));
-  const openGoals = goals.filter(g => !g.completed && mine(g));
+  const assignedGoals = goals.filter(mine);
   const total =
     dueCommitments.reduce((s, c) => s + (c.amount || 0), 0) +
-    openGoals.reduce((s, g) => s + goalContribFor(g, record), 0);
-  return { commitments: dueCommitments, goals: openGoals, total };
+    assignedGoals.reduce((s, g) => s + goalContribFor(g, record), 0);
+  return { commitments: dueCommitments, goals: assignedGoals, total };
 }
 
 export function calcRemaining(salary, commitmentsTotal, goalsTotal) {
