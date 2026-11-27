@@ -25,6 +25,10 @@
   --card: #1A1650;
   --card2: #201C5E;
   --primary: #6C63FF;
+  /* --primary reads at 3.82:1 on --card, too low for body text. Use this
+     lighter tint (5.55:1) for small primary-coloured text; keep --primary
+     itself for fills, progress bars and brand surfaces. */
+  --primary-text: #9286FF;
   --primary-dim: rgba(108,99,255,0.15);
   --accent: #00C9A7;
   --accent-dim: rgba(0,201,167,0.15);
@@ -34,7 +38,9 @@
   --gold-dim: rgba(255,184,48,0.15);
   --text: #FFFFFF;
   --text2: #9B99C8;
-  --text3: #5C5A8A;
+  /* Lifted from #5C5A8A, which sat at 2.58:1 on --card and failed WCAG AA
+     everywhere it was used. Same hue, now 5.06:1, still dimmer than --text2. */
+  --text3: #8A87CF;
   --border: #2A2660;
   --r: 16px;
   --r-sm: 10px;
@@ -92,7 +98,7 @@ html, body {
 .btn-ghost { background: transparent; color: var(--text2); }
 .btn-danger { background: var(--danger-dim); color: var(--danger); }
 .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); width: 100%; font-size: 16px; border-radius: var(--r); padding: 15px; }
-.btn-icon { background: var(--card2); border-radius: var(--r-sm); padding: 10px; width: 40px; height: 40px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.btn-icon { background: var(--card2); border-radius: var(--r-sm); padding: 10px; width: 44px; height: 44px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
 .input-group { display: flex; flex-direction: column; gap: 6px; }
 .input-label { font-size: 13px; color: var(--text2); font-weight: 600; }
@@ -187,3 +193,32 @@ html, body {
 .mt-16 { margin-top: 16px; }
 .mt-24 { margin-top: 24px; }
 .p-16 { padding: 16px; }
+
+/* ── Accessibility ─────────────────────────────────────────────────────────
+   Focus was previously invisible everywhere except .input, leaving keyboard
+   users with no idea where they were. */
+:focus-visible {
+  outline: 2px solid var(--primary-text);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.input:focus-visible { outline-offset: 0; }
+
+/* Every interactive control clears the 44px comfortable-touch floor. Applied
+   to bare elements so per-page inline styles can still shrink a control
+   deliberately, but nothing falls below it by accident. */
+button, [role="button"], a.btn, label.btn {
+  min-height: 44px;
+}
+/* Chips and inline pills are deliberately compact; give them a transparent
+   hit area instead of visually enlarging them. */
+.chip { min-height: 44px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

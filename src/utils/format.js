@@ -5,8 +5,8 @@ export function formatAmount(n) {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-export function currentMonth() {
-  const now = new Date();
+// `now` is injectable so date-dependent logic can be tested across months.
+export function currentMonth(now = new Date()) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
@@ -34,11 +34,22 @@ export function monthFromDate(d) {
   return d.substring(0, 7);
 }
 
-export function daysUntil(dayOfMonth) {
-  const today = new Date();
-  const target = new Date(today.getFullYear(), today.getMonth(), dayOfMonth);
-  if (target <= today) target.setMonth(target.getMonth() + 1);
-  return Math.ceil((target - today) / 86400000);
+// Clamps a day-of-month to a month that may be shorter: day 31 in September
+// lands on the 30th rather than spilling into October.
+function dayInMonth(year, month, dayOfMonth) {
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return new Date(year, month, Math.min(dayOfMonth, lastDay));
+}
+
+// Days from today until a commitment's next due date. Returns 0 when it falls
+// today: both operands are normalised to midnight, so a due date earlier today
+// no longer counts as passed, and the roll-forward triggers on a strictly
+// earlier date rather than an earlier instant.
+export function daysUntil(dayOfMonth, now = new Date()) {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let target = dayInMonth(today.getFullYear(), today.getMonth(), dayOfMonth);
+  if (target < today) target = dayInMonth(today.getFullYear(), today.getMonth() + 1, dayOfMonth);
+  return Math.round((target - today) / 86400000);
 }
 
 export function uid() {

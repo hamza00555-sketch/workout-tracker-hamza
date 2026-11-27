@@ -1,9 +1,9 @@
 const STROKE = { fill: 'none', stroke: 'white', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' };
 const S = (p) => ({ ...STROKE, ...p });
 
-export function IconRent() {
+export function IconRent({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <rect x="3" y="9" width="18" height="13" rx="1.5" {...STROKE} />
       <path d="M9 22v-6h6v6" {...STROKE} />
       <path d="M2 9l10-7 10 7" {...STROKE} />
@@ -13,9 +13,9 @@ export function IconRent() {
   );
 }
 
-export function IconBills() {
+export function IconBills({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" {...STROKE} />
       <polyline points="14 2 14 8 20 8" {...STROKE} />
       <line x1="9" y1="13" x2="15" y2="13" {...STROKE} />
@@ -24,17 +24,17 @@ export function IconBills() {
   );
 }
 
-export function IconElectricity() {
+export function IconElectricity({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" {...STROKE} />
     </svg>
   );
 }
 
-export function IconInternet() {
+export function IconInternet({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <rect x="4" y="13" width="16" height="8" rx="2" {...STROKE} />
       <path d="M12 13v-2" {...STROKE} />
       <path d="M8.5 11C9.5 9.5 10.7 8.5 12 8.5s2.5 1 3.5 2.5" {...STROKE} />
@@ -46,18 +46,18 @@ export function IconInternet() {
   );
 }
 
-export function IconSubscription() {
+export function IconSubscription({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <circle cx="12" cy="12" r="10" {...STROKE} />
       <polygon points="10 8 16 12 10 16 10 8" fill="white" stroke="none" />
     </svg>
   );
 }
 
-export function IconGym() {
+export function IconGym({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <path d="M6 8.5v7M18 8.5v7" {...STROKE} />
       <path d="M3 10.5v3M21 10.5v3" {...STROKE} />
       <line x1="6" y1="12" x2="18" y2="12" {...STROKE} />
@@ -69,9 +69,9 @@ export function IconGym() {
   );
 }
 
-export function IconInstallment() {
+export function IconInstallment({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <rect x="2" y="5" width="20" height="14" rx="2" {...STROKE} />
       <line x1="2" y1="10" x2="22" y2="10" {...STROKE} />
       <line x1="6" y1="15" x2="10" y2="15" {...STROKE} />
@@ -79,18 +79,18 @@ export function IconInstallment() {
   );
 }
 
-export function IconInvestment() {
+export function IconInvestment({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" {...STROKE} />
       <polyline points="16 7 22 7 22 13" {...STROKE} />
     </svg>
   );
 }
 
-export function IconSavings() {
+export function IconSavings({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <path d="M20 9V7a2 2 0 00-2-2H6a2 2 0 00-2 2v1" {...STROKE} />
       <path d="M4 9h16a1 1 0 011 1v9a2 2 0 01-2 2H5a2 2 0 01-2-2v-9a1 1 0 011-1z" {...STROKE} />
       <circle cx="12" cy="14" r="2" {...STROKE} />
@@ -98,9 +98,9 @@ export function IconSavings() {
   );
 }
 
-export function IconFamily() {
+export function IconFamily({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" {...STROKE} />
       <circle cx="9" cy="7" r="4" {...STROKE} />
       <path d="M23 21v-2a4 4 0 00-3-3.87" {...STROKE} />
@@ -109,9 +109,9 @@ export function IconFamily() {
   );
 }
 
-export function IconOther() {
+export function IconOther({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <circle cx="6" cy="12" r="1.5" fill="white" stroke="none" />
       <circle cx="12" cy="12" r="1.5" fill="white" stroke="none" />
       <circle cx="18" cy="12" r="1.5" fill="white" stroke="none" />
@@ -121,17 +121,17 @@ export function IconOther() {
 
 /* ── Goal Icons ── */
 
-export function IconTravel() {
+export function IconTravel({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" {...STROKE} />
     </svg>
   );
 }
 
-export function IconCar() {
+export function IconCar({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <path d="M5 17H3a2 2 0 01-2-2V9a2 2 0 012-2h16l3 5v5a2 2 0 01-2 2h-2" {...STROKE} />
       <path d="M3 7l2-4h14l2 4" {...STROKE} />
       <circle cx="7.5" cy="17.5" r="2.5" {...STROKE} />
@@ -140,9 +140,9 @@ export function IconCar() {
   );
 }
 
-export function IconElectronics() {
+export function IconElectronics({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <rect x="3" y="4" width="18" height="13" rx="2" {...STROKE} />
       <line x1="3" y1="20" x2="21" y2="20" {...STROKE} />
       <line x1="8" y1="17" x2="8" y2="20" {...STROKE} />
@@ -151,36 +151,36 @@ export function IconElectronics() {
   );
 }
 
-export function IconEmergency() {
+export function IconEmergency({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.5C17.25 22.15 21 17.25 21 12V7l-9-5z" {...STROKE} />
       <polyline points="9 12 11 14 15 10" {...STROKE} />
     </svg>
   );
 }
 
-export function IconEducation() {
+export function IconEducation({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <polygon points="12 2 22 8.5 12 15 2 8.5 12 2" {...STROKE} />
       <polyline points="6 11.5 6 18 12 21.5 18 18 18 11.5" {...STROKE} />
     </svg>
   );
 }
 
-export function IconHome() {
+export function IconHome({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" {...STROKE} />
       <polyline points="9 22 9 12 15 12 15 22" {...STROKE} />
     </svg>
   );
 }
 
-export function IconDebt() {
+export function IconDebt({ size = 22 }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
+    <svg viewBox="0 0 24 24" width={size} height={size}>
       <path d="M16 3h5v5" {...STROKE} />
       <path d="M8 3H3v5" {...STROKE} />
       <path d="M12 22v-9" {...STROKE} />

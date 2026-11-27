@@ -31,8 +31,46 @@ export function calcCommitmentsTotal(commitments, month) {
     .reduce((s, c) => s + (c.amount || 0), 0);
 }
 
-export function calcGoalsMonthlyTotal(goals) {
-  return goals.filter(g => !g.completed).reduce((s, g) => s + (g.monthlyContribution || 0), 0);
+// Salary Day edits are scoped to the month they were made in: they live on the
+// monthly record and must never overwrite the goal's standing contribution.
+// Reading through here is what makes those edits visible everywhere else.
+export function goalContribFor(goal, record) {
+  const scoped = record?.goalContribs?.[goal.id];
+  // Guard before coercing: Number(null) and Number('') are both 0, which would
+  // silently read a missing entry as a deliberate zero contribution.
+  if (scoped === null || scoped === undefined || scoped === '') {
+    return goal.monthlyContribution || 0;
+  }
+  const n = Number(scoped);
+  return Number.isFinite(n) ? n : (goal.monthlyContribution || 0);
+}
+
+// Counts every goal carrying a monthly contribution, completed or not: the
+// money is spoken for either way, and leaving completed ones out let the same
+// riyal read as both "available this month" and "assigned to a bank".
+// A finished goal stops counting by having its contribution set to zero.
+export function calcGoalsMonthlyTotal(goals, record) {
+  return goals.reduce((s, g) => s + goalContribFor(g, record), 0);
+}
+
+// Everything earmarked for a bank (or one of its accounts) this month.
+//
+// This is a map of where money is assigned, not a filtered to-do list, so a
+// goal that already hit its target still counts while it carries a monthly
+// contribution — the account is still its destination. Paused and archived
+// commitments are the one exclusion: those were explicitly switched off.
+//
+// The dashboard and the Banks page used to compute this inline and had drifted
+// apart, reporting different figures for the same bank. Both read it here now.
+export function bankAllocation(bankId, { commitments = [], goals = [], record = null, month, accountId } = {}) {
+  const m = month ?? currentMonth();
+  const mine = x => x.bankId === bankId && (accountId === undefined || x.accountId === accountId);
+  const dueCommitments = commitments.filter(c => isCommitmentDue(c, m) && mine(c));
+  const assignedGoals = goals.filter(mine);
+  const total =
+    dueCommitments.reduce((s, c) => s + (c.amount || 0), 0) +
+    assignedGoals.reduce((s, g) => s + goalContribFor(g, record), 0);
+  return { commitments: dueCommitments, goals: assignedGoals, total };
 }
 
 export function calcRemaining(salary, commitmentsTotal, goalsTotal) {

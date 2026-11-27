@@ -32,7 +32,7 @@ export default function SavingsCalc({ onClose, onAddGoal }) {
   const month = currentMonth();
   const salary = currentMonthRecord?.salary || settings.salary || 0;
   const commitmentsTotal = calcCommitmentsTotal(commitments);
-  const goalsMonthly = calcGoalsMonthlyTotal(goals);
+  const goalsMonthly = calcGoalsMonthlyTotal(goals, currentMonthRecord);
   const spentBudget = currentMonthRecord?.expenseBudget || settings.expenseBudget || 0;
   const freeBudget = salary - commitmentsTotal - goalsMonthly - spentBudget;
 

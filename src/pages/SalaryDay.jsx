@@ -9,12 +9,14 @@ export default function SalaryDay() {
   const { settings, commitments, goals, confirmSalaryDay, fmt } = useApp();
   const [salary, setSalary] = useState(String(settings.salary));
   const [goalContribs, setGoalContribs] = useState(
-    Object.fromEntries(goals.filter(g => !g.completed).map(g => [g.id, String(g.monthlyContribution || 0)]))
+    Object.fromEntries(goals.map(g => [g.id, String(g.monthlyContribution || 0)]))
   );
 
   const month = currentMonth();
   const activeCommitments = commitments.filter(c => isCommitmentDue(c, month));
-  const activeGoals = goals.filter(g => !g.completed);
+  // Every goal with a contribution, matching what the dashboard subtracts —
+  // otherwise this screen's "remaining" would disagree with the one on it.
+  const activeGoals = goals;
 
   const commitmentsTotal = useMemo(() => calcCommitmentsTotal(activeCommitments), [activeCommitments]);
   const goalsTotal = useMemo(
@@ -99,9 +101,19 @@ export default function SalaryDay() {
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <CatIcon id={cat.id} size={18} />
                   </div>
-                  <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{g.name}</span>
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: 600, minWidth: 0 }}>
+                    {g.name}
+                    {/* It still counts, so say why it looks finished — and the
+                        input beside it is how you stop it counting. */}
+                    {g.completed && (
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', marginRight: 6 }}>
+                        ✓ مكتمل
+                      </span>
+                    )}
+                  </span>
                   <input
                     type="text" inputMode="decimal" value={goalContribs[g.id] || ''}
+                    aria-label={`مساهمة ${g.name} الشهرية`}
                     onChange={e => setGoalContribs(p => ({ ...p, [g.id]: e.target.value }))}
                     style={{
                       background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8,

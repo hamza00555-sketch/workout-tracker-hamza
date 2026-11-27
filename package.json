@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:rushd-sync": "node scripts/ratibi-rushd-bundle-test.mjs"
+    "test:rushd-sync": "node scripts/ratibi-rushd-bundle-test.mjs",
+    "test:dashboard": "node scripts/ratibi-dashboard-test.mjs",
+    "test": "npm run test:rushd-sync && npm run test:dashboard"
   },
   "dependencies": {
     "firebase": "^12.16.0",

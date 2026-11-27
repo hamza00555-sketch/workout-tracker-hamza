@@ -45,6 +45,7 @@ export default function Goals() {
       name: form.name, targetAmount: Number(form.targetAmount),
       targetDate: form.targetDate, category: form.category,
       bankId: form.bankId, accountId: form.accountId,
+      extraIncomeTag: !!form.extraIncomeTag,
     };
     const mc = form.monthlyContribution ? Number(form.monthlyContribution) : null;
     if (editItem) {

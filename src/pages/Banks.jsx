@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { uid } from '../utils/format.js';
-import { isCommitmentDue } from '../utils/calc.js';
+import { bankAllocation, goalContribFor } from '../utils/calc.js';
 import BottomSheet from '../components/BottomSheet.jsx';
 
 const BANK_EMOJIS = ['🏦', '🏧', '💳', '💰', '💵', '📊', '🏛️', '🌱', '🛡️', '📈', '🏠', '🚗'];
@@ -163,7 +163,7 @@ export default function Banks() {
 }
 
 function BankCard({ bank, commitments, goals, onEdit }) {
-  const { fmt } = useApp();
+  const { fmt, currentMonthRecord } = useApp();
 
   return (
     <div className="card anim-fadeup" style={{ borderRight: `4px solid ${bank.color}` }}>
@@ -188,8 +188,9 @@ function BankCard({ bank, commitments, goals, onEdit }) {
       {/* Accounts with assigned commitments/goals */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {bank.accounts.map(acc => {
-          const accCommitments = commitments.filter(c => isCommitmentDue(c) && c.bankId === bank.id && c.accountId === acc.id);
-          const accGoals = goals.filter(g => g.bankId === bank.id && g.accountId === acc.id);
+          const alloc = bankAllocation(bank.id, { commitments, goals, record: currentMonthRecord, accountId: acc.id });
+          const accCommitments = alloc.commitments;
+          const accGoals = alloc.goals;
           const hasAssigned = accCommitments.length > 0 || accGoals.length > 0;
 
           return (
@@ -212,9 +213,17 @@ function BankCard({ bank, commitments, goals, onEdit }) {
               {accGoals.map(g => (
                 <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <span style={{ fontSize: 13 }}>🎯</span>
-                  <span style={{ flex: 1, fontSize: 12, color: 'var(--text2)' }}>{g.name}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>
-                    <span className="num">{fmt(g.monthlyContribution || 0)}</span> ريال/شهر
+                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text2)', minWidth: 0 }}>
+                    {g.name}
+                    {/* It still counts toward the total, so say why it looks done. */}
+                    {g.completed && (
+                      <span style={{
+                        fontSize: 12, fontWeight: 700, color: 'var(--accent)', marginRight: 6,
+                      }}>✓ مكتمل</span>
+                    )}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary-text)', flexShrink: 0 }}>
+                    <span className="num">{fmt(goalContribFor(g, currentMonthRecord))}</span> ريال/شهر
                   </span>
                 </div>
               ))}
