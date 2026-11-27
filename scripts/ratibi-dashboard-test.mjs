@@ -4,7 +4,7 @@
  */
 import assert from 'assert/strict';
 import { daysUntil, currentMonth } from '../src/utils/format.js';
-import { goalContribFor, calcGoalsMonthlyTotal, isCommitmentDue } from '../src/utils/calc.js';
+import { goalContribFor, calcGoalsMonthlyTotal, isCommitmentDue, bankAllocation } from '../src/utils/calc.js';
 import { getNextAction } from '../src/utils/nextAction.js';
 
 let passed = 0, failed = 0;
@@ -238,6 +238,52 @@ test('العناوين بلا أرقام تمرّ كما هي', () => {
   const a = getNextAction({ record, settings, today: at('2026-08-28') });
   assert.equal(a.key, 'undistributed');
   assert.deepEqual(wrapped(a.title), [], 'لا رقم في هذا العنوان — المبلغ يُعرض منفصلاً');
+});
+
+// ── Dashboard and Banks must report the same figure for a bank ──────────────
+console.log('\nbankAllocation');
+// Reproduces the real report: the dashboard said 4,500 for الانماء while the
+// Banks page listed rows adding to 5,700. The gap was one completed goal that
+// Banks counted and the dashboard did not.
+const BANK = 'b-inma';
+const bankCommitments = [
+  { id: 'c1', name: 'الطوارئ', amount: 1000, dayOfMonth: 27, active: true, bankId: BANK, accountId: 'a-emg' },
+  { id: 'c2', name: 'السفر', amount: 1000, dayOfMonth: 27, active: true, bankId: BANK, accountId: 'a-trv' },
+  { id: 'c3', name: 'السوبرماركت', amount: 1500, dayOfMonth: 27, active: true, bankId: BANK, accountId: 'a-shop' },
+];
+const bankGoals = [
+  { id: 'g-res', name: 'الاقامة', monthlyContribution: 1200, completed: true,  bankId: BANK, accountId: 'a-res' },
+  { id: 'g-res2', name: 'الاقامة', monthlyContribution: 0,    completed: false, bankId: BANK, accountId: 'a-res' },
+  { id: 'g-debt', name: 'دين', monthlyContribution: 1000, completed: false, bankId: BANK, accountId: 'a-main' },
+];
+const ACCOUNTS = ['a-emg', 'a-trv', 'a-res', 'a-main', 'a-shop'];
+
+test('الهدف المكتمل لا يُحتسب ضمن تحويلات البنك', () => {
+  const t = bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, month: '2026-11' }).total;
+  assert.equal(t, 4500, '1000+1000+1500 التزامات + 1000 هدف مفتوح — بلا الهدف المكتمل');
+});
+test('مجموع الحسابات يساوي مجموع البنك بالضبط', () => {
+  const bankTotal = bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, month: '2026-11' }).total;
+  const sumOfAccounts = ACCOUNTS.reduce((s, accountId) =>
+    s + bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, month: '2026-11', accountId }).total, 0);
+  assert.equal(sumOfAccounts, bankTotal, 'الشاشتان يجب ألا تختلفا أبداً');
+});
+test('الالتزام الموقوف يسقط من الشاشتين معاً', () => {
+  const paused = bankCommitments.map(c => c.id === 'c3' ? { ...c, pausedMonth: '2026-11' } : c);
+  const t = bankAllocation(BANK, { commitments: paused, goals: bankGoals, month: '2026-11' }).total;
+  assert.equal(t, 3000);
+});
+test('تعديل مساهمة الشهر ينعكس على تحويلات البنك', () => {
+  // Salary Day edits live on the record; the bank view must follow them without
+  // the goal itself being rewritten.
+  const rec = { goalContribs: { 'g-debt': 250 } };
+  const t = bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, record: rec, month: '2026-11' }).total;
+  assert.equal(t, 3750, '1000 صارت 250 لهذا الشهر فقط');
+});
+test('حساب بلا تعيينات يرجّع صفراً', () => {
+  const r = bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, month: '2026-11', accountId: 'nope' });
+  assert.equal(r.total, 0);
+  assert.equal(r.commitments.length + r.goals.length, 0);
 });
 
 console.log('');

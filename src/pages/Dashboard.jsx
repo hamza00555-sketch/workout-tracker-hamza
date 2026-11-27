@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext.jsx';
 import { currentMonth, currentMonthLabel, daysUntil, formatDate } from '../utils/format.js';
 import {
   calcCommitmentsTotal, calcGoalsMonthlyTotal, calcGoalProgress,
-  isCommitmentDue, goalContribFor,
+  isCommitmentDue, bankAllocation,
 } from '../utils/calc.js';
 import { getNextAction } from '../utils/nextAction.js';
 import { getCatData, GOAL_CATEGORIES } from '../components/CategoryData.js';
@@ -74,14 +74,12 @@ export default function Dashboard() {
     .sort((a, b) => a.days - b.days);
   const upcomingSoon = upcoming.filter(c => c.days <= 7).slice(0, 3);
 
-  const bankTransfers = banks.map(bank => {
-    const total =
-      commitments.filter(c => isCommitmentDue(c, thisMonth) && c.bankId === bank.id)
-        .reduce((s, c) => s + (c.amount || 0), 0) +
-      openGoals.filter(g => g.bankId === bank.id)
-        .reduce((s, g) => s + goalContribFor(g, record), 0);
-    return { ...bank, total };
-  }).filter(b => b.total > 0);
+  const bankTransfers = banks
+    .map(bank => ({
+      ...bank,
+      total: bankAllocation(bank.id, { commitments, goals, record, month: thisMonth }).total,
+    }))
+    .filter(b => b.total > 0);
 
   const recentActivity = useMemo(() => {
     const items = [];

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { uid } from '../utils/format.js';
-import { isCommitmentDue } from '../utils/calc.js';
+import { bankAllocation } from '../utils/calc.js';
 import BottomSheet from '../components/BottomSheet.jsx';
 
 const BANK_EMOJIS = ['🏦', '🏧', '💳', '💰', '💵', '📊', '🏛️', '🌱', '🛡️', '📈', '🏠', '🚗'];
@@ -163,7 +163,7 @@ export default function Banks() {
 }
 
 function BankCard({ bank, commitments, goals, onEdit }) {
-  const { fmt } = useApp();
+  const { fmt, currentMonthRecord } = useApp();
 
   return (
     <div className="card anim-fadeup" style={{ borderRight: `4px solid ${bank.color}` }}>
@@ -188,8 +188,9 @@ function BankCard({ bank, commitments, goals, onEdit }) {
       {/* Accounts with assigned commitments/goals */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {bank.accounts.map(acc => {
-          const accCommitments = commitments.filter(c => isCommitmentDue(c) && c.bankId === bank.id && c.accountId === acc.id);
-          const accGoals = goals.filter(g => g.bankId === bank.id && g.accountId === acc.id);
+          const alloc = bankAllocation(bank.id, { commitments, goals, record: currentMonthRecord, accountId: acc.id });
+          const accCommitments = alloc.commitments;
+          const accGoals = alloc.goals;
           const hasAssigned = accCommitments.length > 0 || accGoals.length > 0;
 
           return (

@@ -49,6 +49,23 @@ export function calcGoalsMonthlyTotal(goals, record) {
   return goals.filter(g => !g.completed).reduce((s, g) => s + goalContribFor(g, record), 0);
 }
 
+// Everything earmarked for a bank (or one of its accounts) this month: due
+// commitments plus this month's contributions to still-open goals.
+//
+// The dashboard and the Banks page each used to compute this inline and had
+// drifted apart — Banks counted completed goals the dashboard excluded, so the
+// two screens disagreed about the same bank. Both read it from here now.
+export function bankAllocation(bankId, { commitments = [], goals = [], record = null, month, accountId } = {}) {
+  const m = month ?? currentMonth();
+  const mine = x => x.bankId === bankId && (accountId === undefined || x.accountId === accountId);
+  const dueCommitments = commitments.filter(c => isCommitmentDue(c, m) && mine(c));
+  const openGoals = goals.filter(g => !g.completed && mine(g));
+  const total =
+    dueCommitments.reduce((s, c) => s + (c.amount || 0), 0) +
+    openGoals.reduce((s, g) => s + goalContribFor(g, record), 0);
+  return { commitments: dueCommitments, goals: openGoals, total };
+}
+
 export function calcRemaining(salary, commitmentsTotal, goalsTotal) {
   return (salary || 0) - commitmentsTotal - goalsTotal;
 }
