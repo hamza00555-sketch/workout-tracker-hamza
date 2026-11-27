@@ -45,8 +45,12 @@ export function goalContribFor(goal, record) {
   return Number.isFinite(n) ? n : (goal.monthlyContribution || 0);
 }
 
+// Counts every goal carrying a monthly contribution, completed or not: the
+// money is spoken for either way, and leaving completed ones out let the same
+// riyal read as both "available this month" and "assigned to a bank".
+// A finished goal stops counting by having its contribution set to zero.
 export function calcGoalsMonthlyTotal(goals, record) {
-  return goals.filter(g => !g.completed).reduce((s, g) => s + goalContribFor(g, record), 0);
+  return goals.reduce((s, g) => s + goalContribFor(g, record), 0);
 }
 
 // Everything earmarked for a bank (or one of its accounts) this month.

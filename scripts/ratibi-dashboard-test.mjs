@@ -4,7 +4,7 @@
  */
 import assert from 'assert/strict';
 import { daysUntil, currentMonth } from '../src/utils/format.js';
-import { goalContribFor, calcGoalsMonthlyTotal, isCommitmentDue, bankAllocation } from '../src/utils/calc.js';
+import { goalContribFor, calcGoalsMonthlyTotal, calcCommitmentsTotal, isCommitmentDue, bankAllocation } from '../src/utils/calc.js';
 import { getNextAction } from '../src/utils/nextAction.js';
 
 let passed = 0, failed = 0;
@@ -65,8 +65,18 @@ test('calcGoalsMonthlyTotal يحترم سجل الشهر', () => {
   assert.equal(calcGoalsMonthlyTotal(goals), 1400);
   assert.equal(calcGoalsMonthlyTotal(goals, { goalContribs: { g1: 100 } }), 500);
 });
-test('الأهداف المكتملة مستثناة', () => {
-  assert.equal(calcGoalsMonthlyTotal([{ ...goal, completed: true }]), 0);
+test('الهدف المكتمل يُحتسب في المتبقي — نفس قاعدة خريطة البنوك', () => {
+  // A completed goal that still carries a contribution is spoken-for money.
+  // Excluding it here while the bank map counted it let one riyal read as both
+  // available and assigned.
+  assert.equal(calcGoalsMonthlyTotal([{ ...goal, completed: true }]), 1000);
+});
+test('الهدف المكتمل بمساهمة صفر لا يخصم شيئاً', () => {
+  // Zeroing the contribution is how a finished goal stops counting.
+  assert.equal(calcGoalsMonthlyTotal([{ ...goal, completed: true, monthlyContribution: 0 }]), 0);
+});
+test('تصفير المساهمة لهذا الشهر فقط يُحترم', () => {
+  assert.equal(calcGoalsMonthlyTotal([{ ...goal, completed: true }], { goalContribs: { g1: 0 } }), 0);
 });
 
 // ── nextAction ───────────────────────────────────────────────────────────────
@@ -287,6 +297,27 @@ test('حساب بلا تعيينات يرجّع صفراً', () => {
   const r = bankAllocation(BANK, { commitments: bankCommitments, goals: bankGoals, month: '2026-11', accountId: 'nope' });
   assert.equal(r.total, 0);
   assert.equal(r.commitments.length + r.goals.length, 0);
+});
+
+
+// ── the whole salary must be accounted for, with nothing double-counted ──────
+console.log('\nمطابقة الراتب');
+test('الراتب = التزامات + أهداف + المتبقي (بلا ازدواج)', () => {
+  // The reported bug in miniature: a completed goal counted by the bank map but
+  // not by "remaining" made the same 1,200 appear twice.
+  const salary = 18645;
+  const cs = [{ id: 'c1', amount: 14124, dayOfMonth: 1, active: true }];
+  const gs = [
+    { id: 'g1', name: 'الخادمة', monthlyContribution: 200, completed: false },
+    { id: 'g2', name: 'الاقامة', monthlyContribution: 1200, completed: true },
+    { id: 'g3', name: 'دين', monthlyContribution: 1000, completed: false },
+  ];
+  const commitmentsTotal = calcCommitmentsTotal(cs, '2026-11');
+  const goalsTotal = calcGoalsMonthlyTotal(gs);
+  const remaining = salary - commitmentsTotal - goalsTotal;
+  assert.equal(goalsTotal, 2400, 'كل الأهداف الحاملة لمساهمة');
+  assert.equal(remaining, 2121);
+  assert.equal(commitmentsTotal + goalsTotal + remaining, salary, 'لا شيء يُحسب مرتين');
 });
 
 console.log('');
